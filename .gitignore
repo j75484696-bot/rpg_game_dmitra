@@ -1,0 +1,42 @@
+# ========== GODOT 4 ==========
+# The big one — Godot's auto-generated cache/import folder. NEVER commit this.
+.godot/
+
+# Old import cache (Godot 3 leftover, harmless to keep)
+.import/
+
+# ========== EXPORTED BUILDS ==========
+# Your compiled game — rebuildable, don't bloat the repo with it
+build/
+builds/
+export/
+exports/
+*.exe
+*.pck
+*.zip
+*.dmg
+*.apk
+*.x86_64
+
+# ========== SECRETS ==========
+# Export presets can hold signing keys / passwords — keep the local one out
+export_presets.cfg
+
+# ========== C# / MONO (only if you add C#, harmless otherwise) ==========
+.mono/
+mono_crash.*
+data_*/
+*.csproj
+*.sln
+
+# ========== OS JUNK ==========
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========== EDITOR JUNK ==========
+*.tmp
+*.swp
+*~
+.idea/
+.vscode/
