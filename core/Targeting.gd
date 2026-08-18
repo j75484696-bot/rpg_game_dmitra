@@ -1,117 +1,102 @@
 extends Node
-## Resolves which characters an action actually hits.
+## Decides who enemies attack, and resolves Guard.
 ##
-## Autoloaded as `Targeting`. Stateless — every call takes the combatant lists
-## it should work over, so it stays usable from battle scenes, AI, and tests
-## alike without caring where those lists came from.
+## Autoloaded as `Targeting`. Stateless — every call takes the combat state it
+## works over, so it stays usable from battle scenes, AI, and tests alike.
+##
+## A `member` here is a small DICTIONARY, not a Character:
+##     { "pos": int, "defense": int, "hp": int, "alive": bool }
+## Combat code builds these from the real Characters each turn.
+##
+## Public surface is fixed by INTEGRATION_SEAMS.md.
 
-enum Mode {
-	SELF,
-	SINGLE_ALLY,
-	ALL_ALLIES,
-	SINGLE_ENEMY,
-	ALL_ENEMIES,
-	RANDOM_ENEMY,
-	EVERYONE,
+enum POS { FRONT, CENTER, BACK1, BACK2 }
+
+## Base threat per position — front line draws the most attention.
+## Exposed so UI can show why a target was likely.
+const POS_THREAT := {
+	POS.FRONT: 4.0,
+	POS.CENTER: 3.0,
+	POS.BACK1: 2.0,
+	POS.BACK2: 2.0,
 }
 
-## Set true to include downed characters (revive items, area effects that
-## still hit corpses). Off by default.
-var include_downed: bool = false
+## How much each point of defense adds to threat, as a fraction of the
+## positional base. Tanks pull aggro, but never with certainty.
+const DEFENSE_THREAT_WEIGHT := 0.05
+
+## Damage reduction applied when a hit is redirected onto a guardian.
+const GUARD_DAMAGE_REDUCTION := 0.4
 
 
-# --- Resolution -------------------------------------------------------------
+## Returns the INDEX of the member the enemy attacks — weighted-random by
+## threat, so tanks get hit most but nobody is ever 100% safe.
+## Returns -1 if everyone is down.
+func pick_target(party: Array) -> int:
+	var weights: Array[float] = []
+	var total := 0.0
+	for member in party:
+		var w := _threat_of(member)
+		weights.append(w)
+		total += w
+	if total <= 0.0:
+		return -1
 
-## Returns the characters an action hits.
-## [param chosen] is the player's pick, and is only consulted by the SINGLE_*
-## modes; the others ignore it.
-func resolve(
-	mode: Mode,
-	actor: Character,
-	allies: Array[Character],
-	enemies: Array[Character],
-	chosen: Character = null
-) -> Array[Character]:
-	var out: Array[Character] = []
-	match mode:
-		Mode.SELF:
-			if is_targetable(actor):
-				out.append(actor)
-		Mode.SINGLE_ALLY:
-			out = _single(chosen, allies)
-		Mode.ALL_ALLIES:
-			out = targetable(allies)
-		Mode.SINGLE_ENEMY:
-			out = _single(chosen, enemies)
-		Mode.ALL_ENEMIES:
-			out = targetable(enemies)
-		Mode.RANDOM_ENEMY:
-			var pick := random_from(enemies)
-			if pick != null:
-				out.append(pick)
-		Mode.EVERYONE:
-			out = targetable(allies)
-			out.append_array(targetable(enemies))
-		_:
-			push_warning("Targeting.resolve: unhandled mode %s" % mode)
-	return out
+	var roll := randf() * total
+	var running := 0.0
+	for i in weights.size():
+		running += weights[i]
+		if roll < running:
+			return i
+	# Float drift only — fall back to the last member carrying any threat.
+	for i in range(weights.size() - 1, -1, -1):
+		if weights[i] > 0.0:
+			return i
+	return -1
 
 
-func _single(chosen: Character, pool: Array[Character]) -> Array[Character]:
-	var out: Array[Character] = []
-	if chosen != null and chosen in pool and is_targetable(chosen):
-		out.append(chosen)
-		return out
-	# Player picked a downed or absent target — fall back to the first valid
-	# one rather than wasting the turn.
-	var fallback := targetable(pool)
-	if not fallback.is_empty():
-		out.append(fallback[0])
-	return out
+## Redirects a hit onto a guardian at reduced damage when the target is being
+## guarded; otherwise passes it through unchanged.
+## [param guardians] maps guardian_index -> guarded_ally_index.
+## Returns `{ "target": int, "damage": float }`.
+func resolve_guard(target_index: int, damage: float, guardians: Dictionary) -> Dictionary:
+	for guardian_index in guardians:
+		if guardians[guardian_index] == target_index:
+			return {
+				"target": int(guardian_index),
+				"damage": damage * (1.0 - GUARD_DAMAGE_REDUCTION),
+			}
+	return {"target": target_index, "damage": damage}
 
 
-# --- Filtering --------------------------------------------------------------
+## Boss-only: ignores threat and guard, hits the lowest-HP alive member.
+## Returns -1 if everyone is down.
+func pick_overwhelm(party: Array) -> int:
+	var best := -1
+	var best_hp := 0
+	for i in party.size():
+		var member = party[i]
+		if not _is_alive(member):
+			continue
+		var hp: int = int(member.get("hp", 0))
+		if best == -1 or hp < best_hp:
+			best = i
+			best_hp = hp
+	return best
 
-func is_targetable(character: Character) -> bool:
-	if character == null:
+
+# --- Internals --------------------------------------------------------------
+
+func _threat_of(member) -> float:
+	if not _is_alive(member):
+		return 0.0
+	var pos: int = int(member.get("pos", POS.FRONT))
+	var base: float = POS_THREAT.get(pos, 1.0)
+	var defense: float = float(member.get("defense", 0))
+	return base * (1.0 + defense * DEFENSE_THREAT_WEIGHT)
+
+
+func _is_alive(member) -> bool:
+	if typeof(member) != TYPE_DICTIONARY:
 		return false
-	return include_downed or character.is_alive()
-
-
-func targetable(pool: Array[Character]) -> Array[Character]:
-	var out: Array[Character] = []
-	for c in pool:
-		if is_targetable(c):
-			out.append(c)
-	return out
-
-
-func random_from(pool: Array[Character]) -> Character:
-	var valid := targetable(pool)
-	if valid.is_empty():
-		return null
-	return valid[randi() % valid.size()]
-
-
-# --- AI helpers -------------------------------------------------------------
-
-## The target [param attack_element] hits hardest. Ties break toward the
-## lowest current HP, so AI finishes off wounded characters.
-func best_by_element(attack_element: StringName, pool: Array[Character]) -> Character:
-	var best: Character = null
-	var best_mult := -1.0
-	for candidate in targetable(pool):
-		var mult := Elements.multiplier(attack_element, candidate.element)
-		if mult > best_mult or (is_equal_approx(mult, best_mult) and candidate.hp < best.hp):
-			best = candidate
-			best_mult = mult
-	return best
-
-
-## The most wounded valid target — for healing, or for finishing blows.
-func lowest_hp(pool: Array[Character]) -> Character:
-	var best: Character = null
-	for candidate in targetable(pool):
-		if best == null or candidate.hp < best.hp:
-			best = candidate
-	return best
+	return bool(member.get("alive", false))
