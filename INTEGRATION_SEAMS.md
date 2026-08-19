@@ -4,6 +4,8 @@
 
 **How to read it:** each entry has the **signature**, what it **returns**, and a **one-line example**.
 
+**Status:** entries marked ⏳ are **agreed here but not implemented yet** — the signature is locked, Coder A still has to build it. Don't call one until it loses the ⏳. Everything unmarked is live in `core/` today.
+
 **Where things live:**
 - `Elements`, `Party`, `Targeting` are **autoload singletons** — call them by name from anywhere (`Elements.matchup(...)`).
 - `Character` is a **class** — you get instances out of `Party.members`, then call methods on them (`Party.members[0].max_hp()`).
@@ -21,6 +23,24 @@ Holds the 4 active party members.
   ```gdscript
   var hero = Party.members[0]        # Ignis
   var count = Party.members.size()   # 4
+  ```
+
+### ⏳ `Party.swap_positions(index_a: int, index_b: int) -> bool`
+- **Returns:** `true` if both indices are valid and the two heroes traded combat slots; `false` otherwise. Swapping rather than assigning keeps all four slots filled exactly once, which the threat calculation assumes.
+- **For:** the prep menu's reorder control. This is the ONLY supported way to move a hero — don't write `character.position` directly.
+- **Example:**
+  ```gdscript
+  if Party.swap_positions(0, 3):      # Ignis and Craig trade places
+      refresh_prep_layout()
+  ```
+
+### ⏳ `Party.member_at_position(pos: int) -> Character`
+- **Returns:** the hero standing in that slot, or `null` if the slot is empty. Pass a `Targeting.POS` value.
+- **For:** laying out the battle screen by slot instead of by roster index.
+- **Example:**
+  ```gdscript
+  var front = Party.member_at_position(Targeting.POS.FRONT)
+  front_portrait.text = front.char_name    # "Craig"
   ```
 
 ---
@@ -88,6 +108,34 @@ A single party member's data + progression.
   Party.members[0].unequip_spell("fire_2")
   ```
 
+### ⏳ `has_skill(skill_id: String) -> bool`
+- **Returns:** `true` if that skill-tree node is already unlocked. Pairs with `unlock_skill()`.
+- **For:** drawing a skill-tree node lit or dim without reading the array yourself.
+- **Example:**
+  ```gdscript
+  node_icon.modulate = Color.WHITE if Party.members[0].has_skill("node_3") else Color.DIM_GRAY
+  ```
+
+### ⏳ `is_ult_ready() -> bool`
+- **Returns:** `true` once `ult_meter` has reached 100.
+- **For:** enabling the Ultimate button in the action menu.
+- **Example:**
+  ```gdscript
+  ult_button.disabled = not Party.members[0].is_ult_ready()
+  ```
+
+### ⏳ `spend_ult() -> bool`
+- **Returns:** `true` if the meter was full and has now been reset to 0; `false` if it wasn't ready (nothing changes).
+- **Example:**
+  ```gdscript
+  if Party.members[0].spend_ult():
+      play_ultimate_animation()
+  ```
+
+### ⏳ `gain_ult(damage_dealt: int, damage_taken: int) -> void`
+- **Returns:** nothing. Fills the meter per COMBAT_DATA.md — **+1 per 2 damage dealt**, **+1 per 4 damage taken** — clamped to 100.
+- **Note:** combat-side, called by Coder A. Listed so both halves agree on the name and the fill rates; UI never calls this.
+
 ### Read-only fields you can display
 These are safe to READ for UI (don't write them directly — use the functions above):
 - `char_name: String` — e.g. `"Ignis"`
@@ -96,6 +144,9 @@ These are safe to READ for UI (don't write them directly — use the functions a
 - `unspent_points: int`
 - `known_spells: Array[String]` — all spells learned so far
 - `equipped_spells: Array[String]` — the (max 3) currently equipped
+- `unlocked_skills: Array[String]` — skill-tree nodes taken so far, e.g. `["node_1", "node_3"]`
+- `position: int` — combat slot: `0` Front, `1` Center, `2` Back1, `3` Back2. Matches `Targeting.POS`. Read freely; change it only via `Party.swap_positions()`
+- ⏳ `ult_meter: int` — `0`–`100`, drives the ultimate bar
 
 - **Example:**
   ```gdscript
@@ -170,6 +221,8 @@ Decides who enemies attack, and resolves Guard.
 | Call | Returns |
 |---|---|
 | `Party.members` | `Array[Character]` |
+| ⏳ `Party.swap_positions(a, b)` | `bool` |
+| ⏳ `Party.member_at_position(pos)` | `Character` or `null` |
 | `char.stat(stat_index)` | `int` |
 | `char.max_hp()` | `int` |
 | `char.max_actions()` | `int` |
@@ -178,6 +231,9 @@ Decides who enemies attack, and resolves Guard.
 | `char.unlock_skill(id)` | `bool` |
 | `char.equip_spell(id)` | `bool` |
 | `char.unequip_spell(id)` | `bool` |
+| ⏳ `char.has_skill(id)` | `bool` |
+| ⏳ `char.is_ult_ready()` | `bool` |
+| ⏳ `char.spend_ult()` | `bool` |
 | `Elements.matchup(atk_el, def_el)` | `float` (1.5 / 1.0 / 0.5) |
 | `Elements.name_of(el)` | `String` |
 | `Targeting.pick_target(party)` | `int` (index, or -1) |
