@@ -108,6 +108,7 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | --- | --- | --- |
 | Dungeon manager (encounter sequence + clear/wipe) | Coder A | type::feature, team::code, area::dungeon, priority::must |
 | Prep menu (reorder / swap spells / item / continue) | Coder B | type::feature, team::code, area::dungeon, priority::must |
+| Prep menu: spend level-up point mid-dungeon | Coder B | type::feature, team::code, area::dungeon, priority::should |
 | Map movement + camera follow | Coder B | type::feature, team::code, area::map, priority::must |
 | Dungeon entrance interaction | Coder B | type::feature, team::code, area::map, priority::must |
 | Random encounter roll on map | Coder B | type::feature, team::code, area::map, priority::should |
@@ -123,7 +124,8 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 
 | Work Item | Assignee | Labels |
 | --- | --- | --- |
-| XP award + level-up wiring + popup | Coder A | type::feature, team::code, area::progression, priority::must |
+| Per-fight XP award (each enemy + boss, mid-dungeon level-up) | Coder A | type::feature, team::code, area::progression, priority::must |
+| Encounter fights award small XP | Coder A | type::feature, team::code, area::progression, priority::should |
 | Wire 6 spells (data-driven) + equip up to 3 | Coder A | type::feature, team::code, area::progression, priority::must |
 | 4 consumables (potion/molotov/bomb/grenade) | Coder A | type::feature, team::code, area::items, priority::must |
 | Enemy drop pool + roll on clear | Coder A | type::feature, team::code, area::items, priority::should |

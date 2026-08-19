@@ -58,20 +58,57 @@ Demo spell IDs follow `<element>_<n>` (see spell list at bottom).
 
 ## 👹 ENEMY STATS
 
+Enemies do **not** have a hand-authored action count. Like heroes, they act off **Stamina** — see [Actions per turn](#actions-per-turn) below.
+
+### Encounter enemies
+
+3 lightweight enemies for random map encounters. Roll a random element on spawn — the stats below are fixed, the element only drives the damage matchup.
+
+| Enemy | STA | HP | DEF | ATT | MAG | SPD | XP | Notes |
+|---|---|---|---|---|---|---|---|---|
+| **Wisp** | 18 | 45 | 6 | 10 | 12 | 20 | 8 | Fast, fragile, dies quick |
+| **Critter** | 24 | 60 | 10 | 14 | 8 | 14 | 10 | Basic melee filler |
+| **Brute** | 28 | 80 | 14 | 18 | 6 | 8 | 12 | Slow, chunky, the "tough" encounter |
+
+### Dungeon enemies
+
 3 normal enemies (fought in order) + 1 boss. Normal enemies are beatable by the 4 level-1 heroes; difficulty ramps across the three.
 
-| Enemy | Element | STA | HP | DEF | ATT | MAG | SPD | Actions | XP | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **Mudling** | 🪨 Earth | 20 | 70 | 10 | 14 | 6 | 10 | 1 | 15 | Weak warmup. Weak to Wind. |
-| **Frostbite Imp** | ❄️ Ice | 24 | 85 | 14 | 16 | 18 | 16 | 1 | 25 | Casts. Weak to Fire → Ignis shines. |
-| **Emberhound** | 🔥 Fire | 24 | 95 | 12 | 20 | 14 | 22 | 2 | 30 | Fast, hits twice. Weak to Water → Aria. |
-| **BOSS: Ashfang** | 🌋 Lava | 30 | 260 | 20 | 26 | 20 | 18 | 2 | 120 | Real threat. Weak to Water. Strong vs Fire (careful, Ignis) + Wind. |
+| Enemy | Element | STA | HP | DEF | ATT | MAG | SPD | XP | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| **Mudling** | 🪨 Earth | 20 | 70 | 10 | 14 | 6 | 10 | 15 | Weak warmup. Weak to Wind. |
+| **Frostbite Imp** | ❄️ Ice | 24 | 85 | 14 | 16 | 18 | 16 | 25 | Casts. Weak to Fire → Ignis shines. |
+| **Emberhound** | 🔥 Fire | 30 | 95 | 12 | 20 | 14 | 22 | 30 | Fast, hits twice (STA 30 → 2 actions). Weak to Water → Aria. |
+| **BOSS: Ashfang** | 🌋 Lava | 30 | 260 | 20 | 26 | 20 | 18 | 120 | Real threat. Weak to Water. Strong vs Fire (careful, Ignis) + Wind. |
 
-**XP notes:** `xp_value` is awarded the moment the enemy dies (per-fight, see [Progression]). Rough level pacing: clearing the 3 normal enemies (~70 XP) + boss (120) ≈ enough for **1–2 level-ups** across a dungeon run. Random map **encounters** award a small flat **~8–12 XP** each (use a light generic enemy, e.g. a Mudling variant). Level thresholds: start simple — **level N needs `N × 50` XP** — and tune in playtest.
+### Actions per turn
+
+**Derived — never hand-enter this.** Same shape as `Character.max_actions()`, with a lower floor:
+
+```gdscript
+# enemy
+1 + int(stat(Elements.STAT.STA) / 30)
+# hero (existing, unchanged in Character.gd)
+2 + int(stat(Elements.STAT.STA) / 30)
+```
+
+Enemies floor at **1** because the party outnumbers them 4-to-1 — giving enemies the hero floor of 2 doubles incoming damage in every fight and makes the warmup encounters harder than the boss.
+
+STA is now the **single dial** for enemy action economy. The next breakpoint is **STA 30**, so nudging a normal enemy from 28 to 30 buys it a second action:
+
+| STA range | Actions | Who |
+|---|---|---|
+| 0–29 | 1 | Wisp, Critter, Brute, Mudling, Frostbite Imp |
+| 30–59 | 2 | Emberhound, Ashfang |
+| 60+ | 3 | *(nobody in the slice — headroom for later)* |
+
+> ⚠️ **One stat changed to make this work:** Emberhound's STA went **24 → 30**. It was flagged as a 2-action enemy but its Stamina didn't support that. Raising the stat earns the second action instead of special-casing it in code. Every other enemy's action count is identical to the old hand-authored column.
+
+**XP notes:** `xp_value` is awarded the moment the enemy dies (per-fight, see [Progression]). Rough level pacing: clearing the 3 normal enemies (~70 XP) + boss (120) ≈ enough for **1–2 level-ups** across a dungeon run. Random map **encounters** award a small flat **8–12 XP** each — see the Encounter enemies table above. Level thresholds: start simple — **level N needs `N × 50` XP** — and tune in playtest.
 
 ### Enemy AI (simple, for the demo)
 - Each enemy picks a target via `Targeting.pick_target` (threat-weighted) and does a basic attack.
-- **Emberhound / Ashfang** get 2 actions — can hit two targets or one target twice.
+- Enemies whose STA derives **2+ actions** (**Emberhound**, **Ashfang**) can hit two targets or one target twice.
 - (Stretch) Ashfang uses `pick_overwhelm` once below 50% HP to punish a hidden low-HP hero.
 
 ---
@@ -133,7 +170,7 @@ Spell damage = `MAG × multiplier − target DEF`, then × element matchup. IDs 
 ## ✅ How coders use this
 1. Put heroes, enemies, items, spells into `data/` files (`.tres` resources or `.json`).
 2. Wire hero base stats to match the Hero table (override `Elements.gd` scale if needed).
-3. Enemy stats + AI action counts from the Enemy table.
+3. Enemy stats from the Enemy tables. **Do not author an action count** — derive it as `1 + int(STA / 30)` (see Actions per turn). Encounter enemies roll a random element on spawn; dungeon enemies use their fixed element.
 4. Drop logic from the Drop table (roll on clear).
 5. Item + spell effects from those tables.
 6. Hand any balance complaints to the Playtester — these numbers are the **starting point**, not the final tuning.
