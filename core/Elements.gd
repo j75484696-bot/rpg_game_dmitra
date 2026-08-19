@@ -1,89 +1,69 @@
+# Elements.gd — Autoload singleton. The backbone of the whole game.
 extends Node
-## Element types and the damage-effectiveness chart.
-##
-## Autoloaded as `Elements`. Must be registered BEFORE `Party` and
-## `Targeting`, both of which call into it.
-##
-## Elements are `StringName`s rather than an enum so they survive
-## serialisation into save files and work as dictionary keys without any
-## parse-order coupling back to this autoload.
 
-const NEUTRAL := &"neutral"
-const FIRE := &"fire"
-const WATER := &"water"
-const EARTH := &"earth"
-const AIR := &"air"
-const LIGHT := &"light"
-const DARK := &"dark"
+# Every element in the game
+enum E { WATER, FIRE, WIND, EARTH, ICE, LIGHTNING, LAVA, SAND, DARK, LIGHT }
 
-const ALL: Array[StringName] = [NEUTRAL, FIRE, WATER, EARTH, AIR, LIGHT, DARK]
+# Which slot in a stat array is which. [STA, HP, DEF, ATT, MAG, SPD]
+enum STAT { STA, HP, DEF, ATT, MAG, SPD }
 
-const SUPER_EFFECTIVE := 2.0
-const NEUTRAL_DAMAGE := 1.0
-const RESISTED := 0.5
-
-## attacker -> { defender -> multiplier }.
-## A classic four-way cycle, plus Light/Dark as mutual opposites.
-## Any pair left out of the table resolves to NEUTRAL_DAMAGE.
-const _CHART := {
-	FIRE: {AIR: SUPER_EFFECTIVE, WATER: RESISTED},
-	AIR: {EARTH: SUPER_EFFECTIVE, FIRE: RESISTED},
-	EARTH: {WATER: SUPER_EFFECTIVE, AIR: RESISTED},
-	WATER: {FIRE: SUPER_EFFECTIVE, EARTH: RESISTED},
-	LIGHT: {DARK: SUPER_EFFECTIVE, LIGHT: RESISTED},
-	DARK: {LIGHT: SUPER_EFFECTIVE, DARK: RESISTED},
+# Base stat GRADES per element: [STA, HP, DEF, ATT, MAG, SPD]
+# Used for generic/random-element enemies. Heroes use explicit numbers (see Party.gd).
+const BASE := {
+	E.WATER:     ["B","S","C","B","B","C"],
+	E.FIRE:      ["C","C","C","S","A","B"],
+	E.WIND:      ["A","C","C","B","B","A"],
+	E.EARTH:     ["B","B","S","C","C","D"],
+	E.ICE:       ["B","C","A","B","C","C"],
+	E.LIGHTNING: ["D","C","C","B","A","S"],
+	E.LAVA:      ["B","B","B","B","B","C"],
+	E.SAND:      ["B","B","B","A","D","A"],
+	E.DARK:      ["C","B","B","A","S","C"],
+	E.LIGHT:     ["S","C","D","A","A","A"],
 }
 
-const _DISPLAY_NAMES := {
-	NEUTRAL: "Neutral",
-	FIRE: "Fire",
-	WATER: "Water",
-	EARTH: "Earth",
-	AIR: "Air",
-	LIGHT: "Light",
-	DARK: "Dark",
+# Grades are RELATIVE tiers. Real numbers per grade, tuned PER STAT. Change freely.
+const STAT_SCALE := {
+	STAT.STA: {"S":42, "A":36, "B":30, "C":24, "D":18},
+	STAT.HP:  {"S":170,"A":140,"B":120,"C":100,"D":80},
+	STAT.DEF: {"S":32, "A":26, "B":21, "C":16, "D":12},
+	STAT.ATT: {"S":34, "A":28, "B":23, "C":18, "D":13},
+	STAT.MAG: {"S":34, "A":28, "B":23, "C":18, "D":13},
+	STAT.SPD: {"S":34, "A":28, "B":23, "C":18, "D":13},
 }
 
+# Who deals BONUS damage to who (super effective). Includes the Earth->Light / Lava->Fire swap.
+const STRONG_VS := {
+	E.WATER:     [E.FIRE, E.LAVA],
+	E.FIRE:      [E.ICE],
+	E.WIND:      [E.EARTH],
+	E.EARTH:     [E.LIGHTNING, E.LIGHT],
+	E.ICE:       [E.WATER, E.WIND, E.DARK],
+	E.LIGHTNING: [E.WATER, E.SAND],
+	E.LAVA:      [E.FIRE, E.WIND],
+	E.SAND:      [E.DARK, E.LIGHT],
+	E.DARK:      [E.LIGHT],
+	E.LIGHT:     [E.DARK],
+}
 
-func is_valid(element: StringName) -> bool:
-	return element in ALL
+const SUPER_EFFECTIVE := 1.5
+const NOT_EFFECTIVE := 0.5
+const NEUTRAL := 1.0
 
+# The real base number for an element's stat (for generic enemies).
+# e.g. base_stat(E.WATER, STAT.HP) -> 170
+func base_stat(element: int, stat: int) -> int:
+	var grade: String = BASE[element][stat]
+	return STAT_SCALE[stat][grade]
 
-func display_name(element: StringName) -> String:
-	return _DISPLAY_NAMES.get(element, "Unknown")
+# Damage multiplier when attacker's element hits defender's element
+func matchup(attacker_element: int, defender_element: int) -> float:
+	if defender_element in STRONG_VS[attacker_element]:
+		return SUPER_EFFECTIVE
+	if attacker_element in STRONG_VS[defender_element]:
+		return NOT_EFFECTIVE
+	return NEUTRAL
 
-
-## Damage multiplier for [param attacker] striking [param defender].
-func multiplier(attacker: StringName, defender: StringName) -> float:
-	if not is_valid(attacker) or not is_valid(defender):
-		push_warning("Elements.multiplier: unknown element (%s -> %s)" % [attacker, defender])
-		return NEUTRAL_DAMAGE
-	var row: Dictionary = _CHART.get(attacker, {})
-	return row.get(defender, NEUTRAL_DAMAGE)
-
-
-## Battle-log text for a multiplier. Empty string when damage is neutral.
-func effectiveness_label(mult: float) -> String:
-	if mult > NEUTRAL_DAMAGE:
-		return "Super effective!"
-	if mult < NEUTRAL_DAMAGE:
-		return "Not very effective..."
-	return ""
-
-
-## Every element [param attacker] hits for bonus damage.
-func strong_against(attacker: StringName) -> Array[StringName]:
-	var out: Array[StringName] = []
-	for defender in ALL:
-		if multiplier(attacker, defender) > NEUTRAL_DAMAGE:
-			out.append(defender)
-	return out
-
-
-## Every element that hits [param defender] for bonus damage.
-func weak_to(defender: StringName) -> Array[StringName]:
-	var out: Array[StringName] = []
-	for attacker in ALL:
-		if multiplier(attacker, defender) > NEUTRAL_DAMAGE:
-			out.append(attacker)
-	return out
+# Turn an element into a readable word, e.g. "Water"
+func name_of(element: int) -> String:
+	return E.keys()[element].capitalize()
