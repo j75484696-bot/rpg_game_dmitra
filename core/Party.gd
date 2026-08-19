@@ -1,31 +1,32 @@
+# Party.gd — Autoload singleton. Holds your active party members.
+# Autoload AFTER Elements (Party depends on Elements).
 extends Node
-## Holds the 4 active party members.
-##
-## Autoloaded as `Party`. Builds its roster in `_ready()`, which reads the
-## element stat tables on `Elements` — so `Elements` MUST be registered above
-## it in [autoload]. Godot instantiates autoloads top-down, so a reordered
-## list trips the assert below on launch rather than failing silently later.
-##
-## Public surface is fixed by INTEGRATION_SEAMS.md: `Party.members`.
 
-const PARTY_SIZE := 4
+# Position constants (match Targeting.POS): 0=Front 1=Center 2=Back1 3=Back2
+const FRONT := 0
+const CENTER := 1
+const BACK1 := 2
+const BACK2 := 3
 
-## The 4 heroes, index 0-3. Read-only for UI.
 var members: Array[Character] = []
 
-
 func _ready() -> void:
-	assert(Elements != null,
-		"Party requires the Elements autoload to be registered before it.")
-	_build_roster()
-
-
-func _build_roster() -> void:
+	# name, element, base_stats [STA,HP,DEF,ATT,MAG,SPD], growth [same order], position
+	# All numbers taken directly from COMBAT_DATA.md.
 	members = [
-		Character.create("Ignis", Elements.E.FIRE),
-		Character.create("Aria", Elements.E.WATER),
-		Character.create("Zeph", Elements.E.WIND),
-		Character.create("Craig", Elements.E.EARTH),
+		_make("Ignis", Elements.E.FIRE,  [24, 100, 16, 34, 28, 23], [1,  8, 1, 4, 3, 2], BACK2),
+		_make("Aria",  Elements.E.WATER, [30, 170, 16, 23, 23, 18], [2, 14, 2, 2, 2, 1], BACK1),
+		_make("Zeph",  Elements.E.WIND,  [36, 100, 16, 23, 23, 34], [2,  8, 1, 2, 2, 4], CENTER),
+		_make("Craig", Elements.E.EARTH, [30, 120, 32, 18, 18, 12], [2, 11, 3, 2, 1, 1], FRONT),
 	]
-	assert(members.size() == PARTY_SIZE,
-		"Party expects exactly %d members." % PARTY_SIZE)
+
+func _make(n: String, e: int, base: Array, grow: Array, pos: int) -> Character:
+	var c := Character.new()
+	c.char_name = n
+	c.element = e
+	c.base_stats = base
+	c.growth = grow
+	c.position = pos
+	c.refresh_spells()                                          # learns <element>_1 at level 1
+	c.equip_spell("%s_1" % Elements.name_of(e).to_lower())      # equip the starter spell
+	return c
