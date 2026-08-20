@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 Elements="*res://core/Elements.gd"
 Party="*res://core/Party.gd"
 Targeting="*res://core/Targeting.gd"
+Transitions="*res://core/Transitions.gd"
 
 [display]
 
