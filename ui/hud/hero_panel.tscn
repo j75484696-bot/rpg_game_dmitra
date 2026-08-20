@@ -1,0 +1,58 @@
+[gd_scene format=3]
+
+[node name="HeroPanel" type="PanelContainer"]
+
+[node name="Margin" type="MarginContainer" parent="."]
+
+[node name="Rows" type="VBoxContainer" parent="Margin"]
+
+[node name="NameLabel" type="Label" parent="Margin/Rows"]
+text = "HERO"
+
+[node name="HpRow" type="HBoxContainer" parent="Margin/Rows"]
+
+[node name="HpTag" type="Label" parent="Margin/Rows/HpRow"]
+text = "HP"
+
+[node name="HpBar" type="ProgressBar" parent="Margin/Rows/HpRow"]
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="HpValue" type="Label" parent="Margin/Rows/HpRow"]
+text = "0/0"
+
+[node name="StaminaRow" type="HBoxContainer" parent="Margin/Rows"]
+
+[node name="StaminaTag" type="Label" parent="Margin/Rows/StaminaRow"]
+text = "STA"
+
+[node name="StaminaBar" type="ProgressBar" parent="Margin/Rows/StaminaRow"]
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="StaminaValue" type="Label" parent="Margin/Rows/StaminaRow"]
+text = "0/0"
+
+[node name="UltRow" type="HBoxContainer" parent="Margin/Rows"]
+
+[node name="UltTag" type="Label" parent="Margin/Rows/UltRow"]
+text = "ULT"
+
+[node name="UltBar" type="ProgressBar" parent="Margin/Rows/UltRow"]
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="Actions" type="GridContainer" parent="Margin/Rows"]
+columns = 2
+
+[node name="AttackButton" type="Button" parent="Margin/Rows/Actions"]
+text = "FIGHT"
+
+[node name="SpellButton" type="Button" parent="Margin/Rows/Actions"]
+text = "SPELL"
+
+[node name="ItemButton" type="Button" parent="Margin/Rows/Actions"]
+text = "ITEMS"
+
+[node name="GuardButton" type="Button" parent="Margin/Rows/Actions"]
+text = "GUARD"
