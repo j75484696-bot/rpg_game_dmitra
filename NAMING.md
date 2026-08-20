@@ -240,11 +240,3 @@ Check these off as they're made. **Bold = must-have; others = nice-to-have.**
 ### Audio (Designer 3)
 - **`bgm_battle.ogg`**, `bgm_map.ogg`, `bgm_menu.ogg`, `bgm_victory.ogg`
 - **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`
-
----
-
-## 📐 Dimensions (from the style guide — keep in sync)
-- Tiles: **32×32** · Character sprites: **48×48** · UI icons: **32×32** · Base resolution: **640×360**
-- Every animation frame is the **same canvas size** as its base sprite (a 48×48 hero → every walk/attack frame is 48×48, character centered the same way so it doesn't jitter).
-
-> ⚠️ Frames of the same animation MUST share identical canvas size + anchor point, or the sprite will "jump" between frames. This is the #1 animation bug — get it right at export.
