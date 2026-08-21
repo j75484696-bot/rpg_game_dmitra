@@ -36,12 +36,15 @@ Add this each level. Kept simple + flat for the demo (no curves).
 - **Ult meter**: fills 0→100 on damage dealt + taken. Suggested: `+1 per 2 damage dealt`, `+1 per 4 damage taken`. Tune in playtest.
 
 ### Default combat positions (prep-phase starting layout)
+Only **three heroes fight at a time**. The fourth is a substitute, swapped in the
+prep menu between fights — never mid-battle. `Targeting.POS.BACK2` is unused.
+
 | Position | Hero | Why |
 |---|---|---|
 | Front | **Craig** | Wall — highest DEF+HP, draws aggro, guards |
 | Center | **Zeph** | Fast melee |
-| Back 1 | **Aria** | Healer/support, stays safe |
-| Back 2 | **Ignis** | Glass cannon, stays safe |
+| Back 1 | **Aria** | Water caster, stays safe |
+| — | **Ignis** | **Substitute** by default — glass cannon, swap him in when Fire helps |
 
 ### Starting spells equipped (max 3)
 Demo spell IDs follow `<element>_<n>` (see spell list at bottom).
@@ -58,21 +61,59 @@ Demo spell IDs follow `<element>_<n>` (see spell list at bottom).
 
 ## 👹 ENEMY STATS
 
-3 normal enemies (fought in order) + 1 boss. Normal enemies are beatable by the 4 level-1 heroes; difficulty ramps across the three.
+Enemies do **not** have a hand-authored action count. Like heroes, they act off **Stamina** — see [Actions per turn](#actions-per-turn) below.
 
-| Enemy | Element | STA | HP | DEF | ATT | MAG | SPD | Actions | XP | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **Mudling** | 🪨 Earth | 20 | 70 | 10 | 14 | 6 | 10 | 1 | 15 | Weak warmup. Weak to Wind. |
-| **Frostbite Imp** | ❄️ Ice | 24 | 85 | 14 | 16 | 18 | 16 | 1 | 25 | Casts. Weak to Fire → Ignis shines. |
-| **Emberhound** | 🔥 Fire | 24 | 95 | 12 | 20 | 14 | 22 | 2 | 30 | Fast, hits twice. Weak to Water → Aria. |
-| **BOSS: Ashfang** | 🌋 Lava | 30 | 260 | 20 | 26 | 20 | 18 | 2 | 120 | Real threat. Weak to Water. Strong vs Fire (careful, Ignis) + Wind. |
+### Encounter enemies
 
-**XP notes:** `xp_value` is awarded the moment the enemy dies (per-fight, see [Progression]). Rough level pacing: clearing the 3 normal enemies (~70 XP) + boss (120) ≈ enough for **1–2 level-ups** across a dungeon run. Random map **encounters** award a small flat **~8–12 XP** each (use a light generic enemy, e.g. a Mudling variant). Level thresholds: start simple — **level N needs `N × 50` XP** — and tune in playtest.
+3 lightweight enemies for random map encounters. Roll a random element on spawn — the stats below are fixed, the element only drives the damage matchup.
+
+| Enemy | STA | HP | DEF | ATT | MAG | SPD | XP | Notes |
+|---|---|---|---|---|---|---|---|---|
+| **Wisp** | 18 | 45 | 6 | 10 | 12 | 20 | 8 | Fast, fragile, dies quick |
+| **Critter** | 24 | 60 | 10 | 14 | 8 | 14 | 10 | Basic melee filler |
+| **Brute** | 28 | 80 | 14 | 18 | 6 | 8 | 12 | Slow, chunky, the "tough" encounter |
+
+### Dungeon enemies
+
+3 normal enemies (fought in order) + 1 boss. Normal enemies are beatable by the 3 active level-1 heroes; difficulty ramps across the three.
+
+| Enemy | Element | STA | HP | DEF | ATT | MAG | SPD | XP | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| **Mudling** | 🪨 Earth | 20 | 70 | 10 | 14 | 6 | 10 | 15 | Weak warmup. Weak to Wind. |
+| **Frostbite Imp** | ❄️ Ice | 24 | 85 | 14 | 16 | 18 | 16 | 25 | Casts. Weak to Fire → Ignis shines. |
+| **Emberhound** | 🔥 Fire | 30 | 95 | 12 | 20 | 14 | 22 | 30 | Fast, hits twice (STA 30 → 2 actions). Weak to Water → Aria. |
+| **BOSS: Ashfang** | 🌋 Lava | 30 | 260 | 20 | 26 | 20 | 18 | 120 | Real threat. Weak to Water. Strong vs Fire (careful, Ignis) + Wind. |
+
+### Actions per turn
+
+**Derived — never hand-enter this.** Same shape as `Character.max_actions()`, with a lower floor:
+
+```gdscript
+# enemy
+1 + int(stat(Elements.STAT.STA) / 30)
+# hero (existing, unchanged in Character.gd)
+2 + int(stat(Elements.STAT.STA) / 30)
+```
+
+Enemies floor at **1** because the party outnumbers them 3-to-1 — giving enemies the hero floor of 2 doubles incoming damage in every fight and makes the warmup encounters harder than the boss.
+
+STA is now the **single dial** for enemy action economy. The next breakpoint is **STA 30**, so nudging a normal enemy from 28 to 30 buys it a second action:
+
+| STA range | Actions | Who |
+|---|---|---|
+| 0–29 | 1 | Wisp, Critter, Brute, Mudling, Frostbite Imp |
+| 30–59 | 2 | Emberhound, Ashfang |
+| 60+ | 3 | *(nobody in the slice — headroom for later)* |
+
+> ⚠️ **One stat changed to make this work:** Emberhound's STA went **24 → 30**. It was flagged as a 2-action enemy but its Stamina didn't support that. Raising the stat earns the second action instead of special-casing it in code. Every other enemy's action count is identical to the old hand-authored column.
+
+**XP notes:** `xp_value` is awarded the moment the enemy dies (per-fight, see [Progression]). Rough level pacing: clearing the 3 normal enemies (~70 XP) + boss (120) ≈ enough for **1–2 level-ups** across a dungeon run. Random map **encounters** award a small flat **8–12 XP** each — see the Encounter enemies table above. Level thresholds: start simple — **level N needs `N × 50` XP** — and tune in playtest.
 
 ### Enemy AI (simple, for the demo)
+- Implemented in `core/EnemyAI.gd`. `EnemyAI.plan_turn()` returns one action per available action, each `{ target, damage, redirected }`.
 - Each enemy picks a target via `Targeting.pick_target` (threat-weighted) and does a basic attack.
-- **Emberhound / Ashfang** get 2 actions — can hit two targets or one target twice.
-- (Stretch) Ashfang uses `pick_overwhelm` once below 50% HP to punish a hidden low-HP hero.
+- Enemies whose STA derives **2+ actions** (**Emberhound**, **Ashfang**) can hit two targets or one target twice.
+- Ashfang uses `pick_overwhelm` below 50% HP to punish a hidden low-HP hero — pass `overwhelm: true` to `plan_turn()`. It ignores threat AND Guard by design.
 
 ---
 
@@ -96,12 +137,12 @@ Rolled **on dungeon clear** (not per enemy). Each enemy contributes to a pooled 
 ### Consumables (usable in battle, cost 1 action)
 | ID | Name | Effect | Value | Element |
 |---|---|---|---|---|
-| `item_potion` | Potion | Heal one hero | +60 HP | — |
+| `item_potion` | Potion | Heal one hero (**the only healing in the game**) | +60 HP | — |
 | `item_molotov` | Molotov | Damage one enemy | 40 dmg | Fire (uses matchup) |
 | `item_bomb` | Bomb | Damage one enemy | 45 dmg | Neutral (no matchup) |
 | `item_grenade` | Elemental Grenade | Damage one enemy | 35 dmg | Element chosen on use (uses matchup) |
 
-- Item damage uses the **thrower's ATT is NOT applied** — items deal their flat value (optionally still reduced by target DEF; pick one rule and note it in code). Recommended: item value − target DEF, then × element matchup for elemental items.
+- Item damage ignores the thrower's ATT entirely. **Decided rule:** `(item value − target DEF) × element matchup`. `item_bomb` is Neutral and skips the matchup. Implemented in `Combat.item()`.
 
 ### Equippables (grant stat bonus; some have a requirement)
 | ID | Name | Bonus | Requirement |
@@ -110,6 +151,43 @@ Rolled **on dungeon clear** (not per enemy). Each enemy contributes to a pooled 
 | `equip_stoneplate` | Stoneplate | +8 DEF, +20 HP | STA ≥ 28 (tanks only) |
 
 - Requirement check: if the hero's stat is below the requirement, block the equip and show a message. `equip_stoneplate` is meant for Craig/Aria, not Ignis.
+
+---
+
+## ⚔️ DAMAGE RULES
+
+Implemented in `core/Combat.gd` — combat code and UI both call it, so both get
+the same number. Everything follows one shape:
+
+```
+(raw − target DEF) × element matchup
+```
+
+**Order matters.** DEF comes off *first*, then the matchup multiplies. The other
+way round lets a super-effective hit punch through armour far harder than
+intended.
+
+| Source | Raw value | Matchup applies? |
+|---|---|---|
+| Melee | attacker's ATT | yes |
+| Spell | attacker's MAG × spell multiplier | yes |
+| Item | the item's flat value (thrower's ATT ignored) | yes, except `item_bomb` |
+
+**Two rules decided in code, not previously specified here:**
+- **Minimum damage is 1.** Stops a bad matchup against a tanky target dealing 0
+  and stalling the fight.
+- **Results floor, they don't round.** DEF is never worth less than face value.
+
+Both are single constants — change them if playtesting disagrees.
+
+**Guard** applies after, via `Targeting.resolve_guard()`: the hit redirects to
+the guardian at −40%.
+
+**Healing** is flat and item-only — `Combat.heal()` caps to the target's missing
+HP, so a potion can't overheal. The return value is the amount actually
+restored, which is what the floating number should show.
+
+**Ult meter** — `Combat.ult_gain()`: `+1 per 2 damage dealt`, `+1 per 4 taken`.
 
 ---
 
@@ -122,18 +200,19 @@ Spell damage = `MAG × multiplier − target DEF`, then × element matchup. IDs 
 | `fire_1` | Ember | Fire | 1.2 | 1 | Ignis starter |
 | `fire_2` | Flame Burst | Fire | 1.8 | 3 | Higher tier |
 | `water_1` | Splash | Water | 1.1 | 1 | Aria starter |
-| `water_2` | Tide (heal) | Water | — | 3 | Heals ally for `MAG × 1.5` instead of damage |
+| `water_2` | Tide | Water | 1.7 | 3 | Higher tier |
 | `wind_1` | Gust | Wind | 1.2 | 1 | Zeph starter |
 | `earth_1` | Pebble | Earth | 1.1 | 1 | Craig starter |
 
-> `water_2` is a heal, not damage — flag it in code as a support spell (targets allies). The rest are single-target damage. This gives the demo one healing spell so Aria has a support identity.
+> **All six spells are single-target damage.** There are no healing spells — potions are the only way to restore HP. Aria is a Water damage caster, not a support hero.
 
 ---
 
 ## ✅ How coders use this
 1. Put heroes, enemies, items, spells into `data/` files (`.tres` resources or `.json`).
 2. Wire hero base stats to match the Hero table (override `Elements.gd` scale if needed).
-3. Enemy stats + AI action counts from the Enemy table.
+3. Enemy stats from the Enemy tables. **Do not author an action count** — derive it as `1 + int(STA / 30)` (see Actions per turn). Encounter enemies roll a random element on spawn; dungeon enemies use their fixed element.
 4. Drop logic from the Drop table (roll on clear).
-5. Item + spell effects from those tables.
-6. Hand any balance complaints to the Playtester — these numbers are the **starting point**, not the final tuning.
+5. Item + spell effects from those tables. **Do not write your own damage math** — call `Combat.melee()`, `Combat.spell()`, `Combat.item()` so the UI and combat agree.
+6. Enemy turns come from `EnemyAI.plan_turn()`; it drives `Targeting` and `Combat` for you.
+7. Hand any balance complaints to the Playtester — these numbers are the **starting point**, not the final tuning.

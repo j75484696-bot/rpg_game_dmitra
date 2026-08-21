@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[node name="Enemy" type="Node2D"]
+
+[node name="Sprite" type="Sprite2D" parent="."]
+
+[node name="ClickArea" type="Area2D" parent="."]
+
+[node name="Collision" type="CollisionShape2D" parent="ClickArea"]
+
+[node name="HpBar" type="ProgressBar" parent="."]
+show_percentage = false
+
+[node name="NameLabel" type="Label" parent="."]
+text = "ENEMY"
