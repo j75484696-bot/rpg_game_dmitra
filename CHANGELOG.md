@@ -7,6 +7,45 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-21
+
+### Added
+- **`core/Combat.gd`** — autoload holding all damage and healing math. Pure
+  functions, no state, so combat code and UI get the same number:
+  `melee()` `spell()` `item()` `heal()` `ult_gain()` `from_character()`.
+  Combatants are dictionaries, matching the convention `Targeting` uses, so
+  this works for enemies despite there being no Enemy class.
+- **`core/EnemyAI.gd`** — autoload deciding what an enemy does on its turn.
+  `plan_turn()` returns one entry per available action, each
+  `{ target, damage, redirected }`, where `target` is who *actually* takes the
+  hit after Guard redirection. Action count comes from Stamina via
+  `actions_for()`. Boss overwhelm is opt-in and fires below 50% HP.
+- **`## ⚔️ DAMAGE RULES`** section in `COMBAT_DATA.md`, documenting the shared
+  `(raw − DEF) × matchup` shape and why DEF is subtracted first.
+
+### Changed
+- **No healing spells — potions only.** `water_2` went from a heal
+  (`MAG × 1.5`) to a 1.7-multiplier damage spell, keeping the demo at six
+  spells so the icon list is unaffected. Aria is now a Water damage caster
+  rather than a support hero.
+- **`COMBAT_DATA.md` now reflects the 3-active-hero party.** Positions table
+  shows three slots plus a substitute, `Targeting.POS.BACK2` is documented as
+  unused, and both balance notes that assumed four heroes were corrected
+  ("beatable by the 3 active level-1 heroes", "outnumbers them 3-to-1").
+- **Item damage rule is decided**, no longer "pick one rule and note it in
+  code": `(item value − target DEF) × matchup`, with `item_bomb` skipping the
+  matchup.
+- `project.godot` — registered the `Combat` and `EnemyAI` autoloads.
+
+### Decided in code
+Neither was specified anywhere, both are single constants in `Combat.gd`:
+- **Minimum damage is 1** — stops a bad matchup against a tanky target dealing
+  0 and stalling a fight.
+- **Damage floors rather than rounds** — DEF is never worth less than its face
+  value.
+
+---
+
 ## 2026-08-20
 
 ### Added
@@ -98,6 +137,8 @@ Things the code is waiting on. Each one blocks work that is otherwise ready.
 | Combat signals — the seams doc has none | All battle UI turn/damage/death reactions | Coder A + B |
 | Prereq logic in `unlock_skill()` | Gated skill tree is enforced UI-side today | Coder A |
 | `main_scene` is unset in `project.godot` | Nothing bootstraps the transition stack | Coder B |
+| Aria has no role now healing is gone | Party identity spread is thinner; affects balance pass | Team |
+| Is `water_2`'s 1.7 multiplier right? | Chosen to parallel `fire_2` (1.8) — needs sign-off | Team |
 
 ### Known inconsistencies
 - `STRUCTURE.md` contradicts itself on menus: `scenes/` is labelled "map, battle,
