@@ -9,10 +9,10 @@
 # Combatants are DICTIONARIES sharing one shape, so Targeting and Combat both
 # read them without translation:
 #
-#     { name, element, pos, hp, max_hp, defense, att, mag, spd, sta,
+#     { name, element, pos, hp, max_hp, def, att, mag, spd, sta,
 #       max_actions, alive, budget }
 #
-# Targeting reads pos/defense/hp/alive. Combat reads att/mag/defense/element.
+# Targeting reads pos/def/hp/alive. Combat reads att/mag/def/element.
 class_name BattleState
 extends RefCounted
 

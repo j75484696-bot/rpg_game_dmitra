@@ -9,11 +9,10 @@
 #     { "sta": int, "att": int, "mag": int, "def": int, "element": int,
 #       "hp": int, "max_hp": int }
 #
-# A party member is the same dictionary Targeting already expects, plus the
-# fields Combat needs to compute damage against it:
+# A party member is the same dictionary Targeting expects. Targeting and Combat
+# now share the "def" key, so one dictionary serves both:
 #
-#     { "pos": int, "defense": int, "hp": int, "alive": bool,
-#       "def": int, "element": int }
+#     { "pos": int, "def": int, "hp": int, "alive": bool, "element": int }
 extends Node
 
 # Boss-only: once below this fraction of max HP, ignore threat and hunt the
