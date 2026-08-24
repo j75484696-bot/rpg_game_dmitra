@@ -136,7 +136,7 @@ if Inventory.can_afford(price) and Inventory.spend_gold(price):
 
 `spend_gold()` and `remove_item()` both return `false` and change nothing when they can't complete, so a Buy button's disabled state can come from the same call that pays.
 
-> **Not here:** the revive counter. "Three revives per dungeon" is per-**run** state — keeping it in a persistent singleton would let it survive leaving the dungeon. It belongs to the M2 dungeon manager.
+> **Not here:** revive counters. Each hero can be revived **three times per dungeon**, tracked per hero. That's per-**run** state — keeping it in a persistent singleton would let it survive leaving the dungeon. It belongs to the M2 dungeon manager.
 
 > 🚧 `STARTING_GOLD` and `STARTING_ITEMS` are placeholders. Real numbers are **TBD** — see `COMBAT_DATA.md`.
 

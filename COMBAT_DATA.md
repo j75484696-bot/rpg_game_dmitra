@@ -211,21 +211,33 @@ in code.
 | **Potions are the only healing** | No healing spells exist. `item_potion` is the entire recovery system |
 | **Level-up raises max HP, not current HP** | Levelling mid-dungeon makes a hero tougher going forward; it does **not** patch them up now |
 | **A downed hero is revived with a potion** | **Mid-battle**, as a normal 1-action item use. Restores the potion's usual **+60 HP** and clears the downed status. There is no separate revive value |
-| **Three revives per dungeon, party-wide** | Not three each — three total. Once spent, further deaths are permanent for the rest of the run |
+| **Three revives per hero, per dungeon** | Each hero has their **own** counter. Ignis three, Aria three, and so on — spending one does not cost anyone else theirs |
+| **A hero who dies a fourth time is out for the run** | Permanently downed. Can't be revived, can't be swapped back in |
 | **Ult meter resets between fights** | It does not carry over |
 | **Substitutes swap after every fight** | Any fight, not just at the entrance |
 
-Attrition is the difficulty curve. A party that burns potions on the warmup
-fight arrives at Ashfang with nothing left, which is the intended tension.
+**The revive cap is not a potion cap.** Potions can be used as often as the
+party can carry them, for healing or reviving. What's limited is how many
+times any *one* hero can come back. The cap exists to stop a single fragile
+hero being farmed back into the fight indefinitely — it isn't the resource the
+player budgets.
+
+That resource is **potion supply**. Attrition is the difficulty curve: HP
+carries between fights, level-ups don't restore it, and the shop is on the
+overworld, so a party that burns its potions on the warmup fight arrives at
+Ashfang with nothing left. That's the intended tension.
 
 **Reviving mid-battle makes the potion a real tactical decision.** The same
-action that could top up Craig can instead bring Aria back from zero, and the
-revive budget is a resource the player spends across the whole run rather than
-a safety net per fight. Losing a hero in round one is recoverable; losing your
-third one is the run.
+1-action potion that tops Craig up can instead bring Aria back from zero.
 
-**The revive counter belongs to the dungeon manager (M2)**, not `Inventory` —
-it's per-run state and resets on entering a dungeon.
+**Losing a hero permanently costs a slot.** Four heroes, three combat slots —
+exactly one spare. The first hero lost for good is absorbed by the substitute;
+the second leaves an empty slot and the party fights short-handed for the rest
+of the run.
+
+**The revive counters belong to the dungeon manager (M2)**, keyed per hero and
+reset on entering a dungeon. They're per-run state, so they don't live on
+`Character` or in `Inventory` — both of those persist.
 
 ---
 

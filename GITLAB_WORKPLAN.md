@@ -114,7 +114,7 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | Random encounter roll on map | Coder B | type::feature, team::code, area::map, priority::should |
 | 3 ENCOUNTER enemy sprites (Wisp, Critter, Brute) | Designer 1 | type::asset, team::art, area::characters, priority::must |
 | Boss sprite: Ashfang (+ optional lunge frame) | Designer 1 | type::asset, team::art, area::characters, priority::must |
-| Revive a downed hero with a potion (3 per dungeon) | Coder A | type::feature, team::code, area::dungeon, priority::must |
+| Revive a downed hero with a potion (3 per HERO, per dungeon) | Coder A | type::feature, team::code, area::dungeon, priority::must |
 | Wipe: eject from dungeon, lose rewards, keep XP | Coder A | type::feature, team::code, area::dungeon, priority::must |
 | Assemble map in Godot (tiles + props + marker) | Designer 2 | type::asset, team::art, area::environment, priority::must |
 | Dungeon map marker/icon | Designer 2 | type::asset, team::art, area::environment, priority::must |

@@ -7,9 +7,10 @@
 # Autoload AFTER Party. Inventory has no dependencies of its own, but anything
 # that consumes an item will want it available early.
 #
-# NOTE: this does NOT track revives. "Three revives per dungeon" is per-run
-# state, and belongs to the dungeon manager (M2) - parking it in a persistent
-# singleton would mean it survives leaving the dungeon, which is wrong.
+# NOTE: this does NOT track revives. Each hero can be revived three times per
+# dungeon, tracked PER HERO - that is per-run state and belongs to the dungeon
+# manager (M2). Parking it in a persistent singleton would mean it survives
+# leaving the dungeon, which is wrong.
 extends Node
 
 # The shop and the HUD react to these rather than polling every frame.
