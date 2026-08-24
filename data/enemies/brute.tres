@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Brute"
 stat_element = 3
 rolls_element = true
-ratings = [9, 7, 4, 10, 3, 6]
+ratings = [9.33, 6.67, 4.375, 10.0, 3.33, 6.15]
 xp_value = 12
 overwhelm = false

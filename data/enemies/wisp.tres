@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Wisp"
 stat_element = 5
 rolls_element = true
-ratings = [10, 5, 4, 4, 4, 6]
+ratings = [10.0, 4.5, 3.75, 4.35, 4.29, 5.88]
 xp_value = 8
 overwhelm = false

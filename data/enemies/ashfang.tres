@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Ashfang"
 stat_element = 6
 rolls_element = false
-ratings = [10, 20, 10, 11, 9, 10]
+ratings = [10.0, 21.7, 9.5, 11.3, 8.7, 10.0]
 xp_value = 120
 overwhelm = true

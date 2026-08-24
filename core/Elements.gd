@@ -62,10 +62,11 @@ func base_stat(element: int, stat: int) -> int:
 const RATING_BASELINE := 10
 
 # base x rating / baseline x tier_scale, rounded. This is the ONLY place an
-# enemy stat is computed — don't hand-author enemy numbers anywhere.
-func rated_stat(element: int, stat: int, rating: int, tier_scale: float = 1.0) -> int:
+# enemy stat is computed - don't hand-author enemy numbers anywhere.
+# Rating is fractional: 10.0 is the element's base, 4.5 is 45% of it.
+func rated_stat(element: int, stat: int, rating: float, tier_scale: float = 1.0) -> int:
 	var base: float = float(base_stat(element, stat))
-	return int(round(base * float(rating) / float(RATING_BASELINE) * tier_scale))
+	return int(round(base * rating / float(RATING_BASELINE) * tier_scale))
 
 # Damage multiplier when attacker's element hits defender's element
 func matchup(attacker_element: int, defender_element: int) -> float:

@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Frostbite Imp"
 stat_element = 4
 rolls_element = false
-ratings = [8, 9, 5, 7, 10, 9]
+ratings = [8.0, 8.5, 5.38, 6.96, 10.0, 8.89]
 xp_value = 25
 overwhelm = false

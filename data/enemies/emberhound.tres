@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Emberhound"
 stat_element = 1
 rolls_element = false
-ratings = [13, 10, 8, 6, 5, 10]
+ratings = [12.5, 9.5, 7.5, 5.88, 5.0, 9.57]
 xp_value = 30
 overwhelm = false

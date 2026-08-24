@@ -7,6 +7,6 @@ script = ExtResource("1_cr")
 display_name = "Mudling"
 stat_element = 3
 rolls_element = false
-ratings = [7, 6, 3, 8, 3, 8]
+ratings = [6.67, 5.83, 3.125, 7.78, 3.33, 7.69]
 xp_value = 15
 overwhelm = false

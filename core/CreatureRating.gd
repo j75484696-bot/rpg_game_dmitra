@@ -20,8 +20,11 @@
 class_name CreatureRating
 extends Resource
 
-const MIN_RATING := 0
-const MAX_RATING := 20
+# Ratings are FRACTIONAL. Integers would only give 10% steps off the element
+# base, which is far too coarse to tune a 45 HP Wisp - and the boss needs 21.7
+# to reach 260 HP off Lava's base of 120.
+const MIN_RATING := 0.0
+const MAX_RATING := 25.0
 
 @export var display_name: String = ""
 
@@ -45,7 +48,7 @@ const MAX_RATING := 20
 @export var overwhelm: bool = false
 
 func stat(stat_index: int, tier_scale: float = 1.0) -> int:
-	var r: int = clampi(int(ratings[stat_index]), MIN_RATING, MAX_RATING)
+	var r: float = clampf(float(ratings[stat_index]), MIN_RATING, MAX_RATING)
 	return Elements.rated_stat(stat_element, stat_index, r, tier_scale)
 
 # Actions per turn come from Stamina, same as every other combatant.
