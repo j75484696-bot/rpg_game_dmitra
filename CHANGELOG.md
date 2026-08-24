@@ -20,6 +20,13 @@ has to read the diff to find out what moved.
   nothing when the budget can't cover it, so UI can drive a button's disabled
   state off the same call that spends.
 
+- **`core/BattleState.gd`** — the combat state machine. `class_name`, one
+  instance per fight. PREP arranges positions, then a turn loop ordered by
+  Speed runs until one side is gone. Emits six signals — `phase_changed`,
+  `turn_started`, `turn_ended`, `action_taken`, `combatant_died`,
+  `battle_ended` — so the battle UI reacts instead of polling. This is the
+  first signal contract in the project.
+
 ### Changed
 - `EnemyAI.actions_for()` now delegates to `Actions.max_for_enemy()` instead of
   carrying its own copy of `1 + int(STA / 30)`. The formula lives in one place.
@@ -35,6 +42,17 @@ has to read the diff to find out what moved.
   hero can guard and still attack twice.
 - **One guardian protects one ally.** Declaring again reassigns rather than
   stacking, so a guardian can never soak two allies at once.
+- **A mutual kill is a loss.** If the last hero and the last enemy fall on the
+  same blow, `_check_end()` tests party wipe first, so the fight is a defeat.
+- **Speed ties go to the hero.** The party should not lose a race it drew.
+- **Turn order rebuilds each round**, so a SPD change mid-fight takes effect
+  next round rather than never.
+
+### Fixed
+- **`Combat` now reads `"defense"`, not `"def"`.** `Targeting` has always used
+  `member["defense"]`; `Combat` was written with `"def"`, so a single combatant
+  dictionary could not feed both. Aligned on `Targeting`'s spelling since it
+  came first. This is what let `BattleState` use one dict shape throughout.
 
 ---
 

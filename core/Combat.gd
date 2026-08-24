@@ -7,7 +7,7 @@
 # this matches the convention Targeting already uses. Build one with
 # from_character() for a hero, or by hand from COMBAT_DATA.md for an enemy:
 #
-#     { "att": int, "mag": int, "def": int, "element": int }
+#     { "att": int, "mag": int, "defense": int, "element": int }
 extends Node
 
 # Damage never drops below this, however tanky the target.
@@ -21,7 +21,7 @@ func from_character(c: Character) -> Dictionary:
 	return {
 		"att": c.stat(Elements.STAT.ATT),
 		"mag": c.stat(Elements.STAT.MAG),
-		"def": c.stat(Elements.STAT.DEF),
+		"defense": c.stat(Elements.STAT.DEF),
 		"element": c.element,
 	}
 
@@ -44,7 +44,7 @@ func item(target: Dictionary, value: int, element: int, use_matchup: bool) -> in
 	return _resolve(value, element, target, use_matchup)
 
 func _resolve(raw: float, attacker_element: int, target: Dictionary, use_matchup: bool) -> int:
-	var after_def: float = raw - float(target["def"])
+	var after_def: float = raw - float(target["defense"])
 	if use_matchup:
 		after_def *= Elements.matchup(attacker_element, target["element"])
 	# Floor rather than round, so DEF is never worth less than its face value.
