@@ -1,16 +1,20 @@
-# BattleState.gd — one fight, start to finish. Reusable class.
+# BattleState.gd - one fight, start to finish. Reusable class.
 # Do NOT autoload this file. It is a class_name and is global automatically.
 #
 #     var battle := BattleState.new()
-#     battle.setup(active_heroes, enemy_stat_dicts)
+#     battle.setup(active_heroes, enemy_dicts)
 #     battle.battle_ended.connect(_on_battle_ended)
 #     battle.begin()          # leaves PREP, builds turn order, starts turn 1
 #
 # Combatants are DICTIONARIES sharing one shape, so Targeting and Combat both
-# read them without translation:
+# read them without translation. This is the CANONICAL shape - see
+# INTEGRATION_SEAMS.md:
 #
 #     { name, element, pos, hp, max_hp, def, att, mag, spd, sta,
 #       max_actions, alive, budget }
+#
+# Enemies carry two extra keys from CreatureRating.build(): xp_value and
+# overwhelm.
 #
 # Targeting reads pos/def/hp/alive. Combat reads att/mag/def/element.
 class_name BattleState
@@ -18,7 +22,7 @@ extends RefCounted
 
 enum PHASE { PREP, TURN, VICTORY, DEFEAT }
 
-# The UI reacts to these — it never polls.
+# The UI reacts to these - it never polls.
 signal phase_changed(phase: int)
 signal turn_started(index: int, is_hero: bool)
 signal turn_ended(index: int, is_hero: bool)
@@ -39,12 +43,18 @@ var turn_cursor: int = -1
 
 # --- Setup ---------------------------------------------------------------
 
-# heroes_in: the three active Characters. enemies_in: stat dicts from COMBAT_DATA.
+# heroes_in: the three active Characters.
+# enemies_in: dictionaries from CreatureRating.build().
 func setup(heroes_in: Array, enemies_in: Array) -> void:
 	heroes.clear()
 	enemies.clear()
 	guards.clear()
 	for c in heroes_in:
+		# The bench never enters a fight. Exactly three heroes are targetable,
+		# so a substitute passed in here is a caller bug worth surfacing.
+		if not Targeting.is_active(c.position):
+			push_warning("BattleState: skipping %s - benched at position %d" % [c.char_name, c.position])
+			continue
 		heroes.append(_combatant_from_character(c))
 	for e in enemies_in:
 		enemies.append(_combatant_from_dict(e))
@@ -59,7 +69,6 @@ func _combatant_from_character(c: Character) -> Dictionary:
 	m["sta"] = c.stat(Elements.STAT.STA)
 	m["spd"] = c.stat(Elements.STAT.SPD)
 	# Cached from Character so the hero formula stays in exactly one place.
-	# Stats don't change mid-fight — points are spent in the prep menu.
 	m["max_actions"] = c.max_actions()
 	m["alive"] = true
 	m["budget"] = ActionBudget.new()
@@ -75,8 +84,8 @@ func _combatant_from_dict(e: Dictionary) -> Dictionary:
 	return m
 
 # --- Prep phase ----------------------------------------------------------
-# Positions drive threat: Front 50, Center 30, Back1 10. BACK2 is unused —
-# only three heroes fight, the fourth is a substitute swapped outside battle.
+# Positions drive threat: Front 50, Center 30, Back1 10. BACK2 is the bench -
+# zero threat, never built into a fight, swapped only in the prep menu.
 
 func set_position(hero_index: int, pos: int) -> bool:
 	if phase != PHASE.PREP or hero_index < 0 or hero_index >= heroes.size():
@@ -84,7 +93,8 @@ func set_position(hero_index: int, pos: int) -> bool:
 	heroes[hero_index]["pos"] = pos
 	return true
 
-# Swapping keeps every slot filled exactly once, which threat weighting assumes.
+# Swapping keeps every active slot filled exactly once, which threat weighting
+# assumes.
 func swap_positions(a: int, b: int) -> bool:
 	if phase != PHASE.PREP:
 		return false
@@ -120,7 +130,7 @@ func _start_round() -> void:
 	turn_cursor = -1
 	_advance()
 
-# Ties go to the hero — the party should not lose a race it drew.
+# Ties go to the hero - the party should not lose a race it drew.
 func _faster_first(a: Dictionary, b: Dictionary) -> bool:
 	if a["spd"] == b["spd"]:
 		return a["is_hero"] and not b["is_hero"]
@@ -162,6 +172,11 @@ func _advance() -> void:
 		_run_enemy_turn(t["index"])
 
 # Heroes: the UI calls this once per action until the budget runs out.
+#
+# NOTE: target_index lives in TWO different index spaces.
+#   MELEE / SPELL / ITEM -> an index into `enemies`
+#   GUARD                -> an index into `heroes`, the ally being protected
+# See INTEGRATION_SEAMS.md.
 func act(type: int, target_index: int) -> bool:
 	var t: Dictionary = current()
 	if phase != PHASE.TURN or t.is_empty() or not t["is_hero"]:
@@ -182,6 +197,11 @@ func act(type: int, target_index: int) -> bool:
 			# BLOCKED: needs the item table and party inventory.
 			amount = 0
 		Actions.TYPE.GUARD:
+			# Hero-space index. Reject and refund rather than writing a bogus
+			# entry onto the guard board.
+			if target_index < 0 or target_index >= heroes.size():
+				actor["budget"].refund(type)
+				return false
 			Actions.declare_guard(guards, t["index"], target_index)
 
 	action_taken.emit(t["index"], true, type, target_index, amount)

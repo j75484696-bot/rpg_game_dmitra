@@ -1,22 +1,24 @@
-# EnemyAI.gd — Autoload singleton. Decides what an enemy does on its turn.
+# EnemyAI.gd - Autoload singleton. Decides what an enemy does on its turn.
 #
 # Targeting owns WHO gets hit (threat weighting, Guard redirection).
 # Combat owns HOW MUCH it hurts. This just drives them, once per action.
 #
-# An enemy is a DICTIONARY — there is no Enemy class yet. Stats come straight
-# from COMBAT_DATA.md:
+# An enemy is a DICTIONARY, built by CreatureRating.build() from data/enemies/:
 #
 #     { "sta": int, "att": int, "mag": int, "def": int, "element": int,
-#       "hp": int, "max_hp": int }
+#       "hp": int, "max_hp": int, "overwhelm": bool }
 #
-# A party member is the same dictionary Targeting expects. Targeting and Combat
-# now share the "def" key, so one dictionary serves both:
+# A party member is the same dictionary Targeting expects, plus the fields
+# Combat needs to compute damage against it:
 #
 #     { "pos": int, "def": int, "hp": int, "alive": bool, "element": int }
+#
+# See INTEGRATION_SEAMS.md for the full canonical shape.
 extends Node
 
 # Boss-only: once below this fraction of max HP, ignore threat and hunt the
-# weakest target instead. Stretch feature — off unless you pass overwhelm=true.
+# weakest target instead. Data-driven - set overwhelm on the CreatureRating
+# rather than branching on the boss's name.
 const OVERWHELM_HP_FRACTION := 0.5
 
 # --- Action economy -------------------------------------------------------
@@ -32,7 +34,7 @@ func actions_for(stamina: int) -> int:
 #     { "target": int, "damage": int, "redirected": bool }
 #
 # "target" is the index that actually TAKES the hit, which may not be the index
-# that was picked — Guard redirects to the guardian at reduced damage.
+# that was picked - Guard redirects to the guardian at reduced damage.
 # Returns an empty array if the whole party is down.
 #
 # guardians maps guardian_index -> guarded_ally_index (see Targeting).
@@ -47,7 +49,7 @@ func plan_turn(enemy: Dictionary, party: Array, guardians: Dictionary = {}, over
 
 		var raw: int = Combat.melee(enemy, party[picked])
 
-		# Overwhelm deliberately ignores Guard — that is the point of it.
+		# Overwhelm deliberately ignores Guard - that is the point of it.
 		if use_overwhelm:
 			plan.append({ "target": picked, "damage": raw, "redirected": false })
 			continue

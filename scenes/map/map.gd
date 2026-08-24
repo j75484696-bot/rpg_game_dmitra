@@ -1,5 +1,6 @@
-# map.gd — overworld traversal: walking, the dungeon entrance, random encounters.
-# Scene code: CALLS into core/ but never edits it. See INTEGRATION_SEAMS.md.
+# map.gd - overworld traversal: walking, the dungeon entrance, random encounters.
+# Any file may edit any other, provided the docs are kept in step.
+# See INTEGRATION_SEAMS.md for what core/ exposes.
 extends Node2D
 
 # --- Movement: free 8-directional -----------------------------------------
@@ -8,6 +9,14 @@ const SPEED := 120.0
 # --- Encounters: rolled anywhere on the map, keyed off distance walked -----
 const ENCOUNTER_CHECK_DISTANCE := 240.0   # pixels walked between rolls
 const ENCOUNTER_CHANCE := 0.25            # chance each time a check fires
+
+# The three lightweight creatures that show up in map encounters. Stats come
+# from the ratings in these files, not from anything hardcoded here.
+const ENCOUNTER_POOL := [
+	"res://data/enemies/wisp.tres",
+	"res://data/enemies/critter.tres",
+	"res://data/enemies/brute.tres",
+]
 
 @onready var player: CharacterBody2D = $Entities/Player
 @onready var sprite: AnimatedSprite2D = $Entities/Player/Sprite
@@ -46,13 +55,17 @@ func _facing_from(dir: Vector2) -> String:
 func _roll_encounter() -> void:
 	if randf() >= ENCOUNTER_CHANCE:
 		return
-	# Transitions.push() handles the handoff, but there is still nothing to
-	# fight: Wisp/Critter/Brute live only in COMBAT_DATA.md, with no enemy
-	# class and no INTEGRATION_SEAMS.md entry. Once that exists:
-	#   await Transitions.push("res://scenes/battle/battle.tscn")
+	# The enemy data now exists. Pick one from the pool and build its combatant
+	# dictionary; each build() rolls a fresh element for the matchup:
+	#
+	#   var rating: CreatureRating = load(ENCOUNTER_POOL.pick_random())
+	#   var enemy_dict := rating.build()
+	#
+	# Still needed before this is wired: a way to hand that dictionary to the
+	# battle scene across Transitions.push(), which has no payload argument.
 	pass
 
 # --- Battle handoff -------------------------------------------------------
 # Nothing to do here. Transitions.push() hides and pauses this scene, and
-# Transitions.pop() brings it back exactly as it was — the player's position
+# Transitions.pop() brings it back exactly as it was - the player's position
 # survives without this scene storing anything.
