@@ -225,6 +225,7 @@ Check these off as they're made. **Bold = must-have; others = nice-to-have.**
 - **`tile_grass.png`**, **`tile_path.png`**, **`tile_grass_edge.png`**
 - **`prop_tree.png`**, **`prop_bush.png`**
 - **`ui_dungeon_marker.png`** (the map entrance icon)
+- **`ui_shop_marker.png`** (the shop's spot on the overworld)
 - **`bg_dungeon.png`** (single static battle background)
 - `bg_menu.png`, `bg_victory.png`, `bg_defeat.png`
 
@@ -234,9 +235,10 @@ Check these off as they're made. **Bold = must-have; others = nice-to-have.**
 - **`icon_spell_<element>_<n>.png`** ×6
 - **`icon_skill_1.png`** … `icon_skill_5.png`
 - **`icon_item_potion.png`**, **`icon_item_molotov.png`**, **`icon_item_bomb.png`**, **`icon_item_grenade.png`**
+- **`ui_shop_panel.png`** (shop screen frame), **`icon_gold.png`** (currency)
 - `vfx_fire_01.png`, `vfx_water_01.png`, `vfx_wind_01.png`, `vfx_earth_01.png`
 - `ui_title_logo.png`
 
 ### Audio (Designer 3)
 - **`bgm_battle.ogg`**, `bgm_map.ogg`, `bgm_menu.ogg`, `bgm_victory.ogg`
-- **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`
+- **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`, `sfx_purchase.ogg`

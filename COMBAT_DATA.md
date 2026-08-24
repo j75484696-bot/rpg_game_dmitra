@@ -210,7 +210,7 @@ in code.
 | **HP carries between fights** | There is no rest, no auto-heal, no camp |
 | **Potions are the only healing** | No healing spells exist. `item_potion` is the entire recovery system |
 | **Level-up raises max HP, not current HP** | Levelling mid-dungeon makes a hero tougher going forward; it does **not** patch them up now |
-| **A downed hero is revived with a potion** | Using `item_potion` on a downed hero brings them back |
+| **A downed hero is revived with a potion** | **Mid-battle**, as a normal 1-action item use. Restores the potion's usual **+60 HP** and clears the downed status. There is no separate revive value |
 | **Three revives per dungeon, party-wide** | Not three each — three total. Once spent, further deaths are permanent for the rest of the run |
 | **Ult meter resets between fights** | It does not carry over |
 | **Substitutes swap after every fight** | Any fight, not just at the entrance |
@@ -218,12 +218,14 @@ in code.
 Attrition is the difficulty curve. A party that burns potions on the warmup
 fight arrives at Ashfang with nothing left, which is the intended tension.
 
-### Open on revives
-- Can a hero be revived **mid-battle**, or only between fights?
-- Does reviving restore the potion's full +60 HP, or a smaller amount?
-- Does the revive counter belong to the dungeon manager (M2)? **Yes** — it's
-  per-run state, so it resets on entering a dungeon and is not saved in
-  `Inventory`.
+**Reviving mid-battle makes the potion a real tactical decision.** The same
+action that could top up Craig can instead bring Aria back from zero, and the
+revive budget is a resource the player spends across the whole run rather than
+a safety net per fight. Losing a hero in round one is recoverable; losing your
+third one is the run.
+
+**The revive counter belongs to the dungeon manager (M2)**, not `Inventory` —
+it's per-run state and resets on entering a dungeon.
 
 ---
 
@@ -284,23 +286,32 @@ against.
 **Gold** is the single currency. It lives with items in `Inventory`, the
 party-wide autoload — one shared pool, **no capacity limit** on anything.
 
-### Starting loadout — TBD
+### Starting loadout
+
+The party begins with healing potions, some gold, and **one starter item per
+character** — four consumables dropped into the shared pool, not an equippable
+each. No new equippables need designing.
 
 | What | Amount |
 |---|---|
 | `item_potion` | **TBD** (currently 3 as a placeholder) |
 | Gold | **TBD** (currently 0) |
-| One item per character | **TBD** — which items? |
+| Four starter items, one per character | **TBD** — which four, from the consumable list |
 
-> **Open:** "each character starts with an item" — is that four consumables
-> added to the shared pool, or a starting **equippable** per hero? Only two
-> equippables exist, so four would need two more designed.
+### The shop
 
-### The shop — TBD
+**The shop is an overworld location.** The player walks to it on the map, the
+same way they walk to the dungeon entrance, and it opens as a full-screen
+screen pushed from `map.gd`.
+
+That placement has a real design consequence: **you cannot shop mid-run.**
+Restocking happens between dungeon runs, so what you carry in is what you
+have. It keeps the dungeon a closed attrition test and makes the pre-run
+potion purchase a genuine decision.
 
 | Question | Status |
 |---|---|
-| Where is it? | **Open** — overworld map, dungeon entrance, or reachable from the prep menu? Decides whether it's a pushed scene or part of the prep flow |
+| Where is it? | **Overworld map.** Pushed scene, `ui/menus/shop.tscn` |
 | What does it stock? | **TBD** — presumably the four consumables; equippables unclear |
 | Prices | **TBD** |
 | Can you sell? | **TBD** — and at what rate |

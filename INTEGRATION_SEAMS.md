@@ -21,10 +21,10 @@
 **Autoloads** — call them by name from anywhere. Registered in this order, and the order matters:
 
 ```
-Elements → Party → Targeting → Transitions → Combat → Actions → EnemyAI
+Elements → Party → Inventory → Targeting → Transitions → Combat → Actions → EnemyAI
 ```
 
-`Party` builds its roster using `Elements`. `EnemyAI` delegates its action-count formula to `Actions`.
+`Party` builds its roster using `Elements`. `EnemyAI` delegates its action-count formula to `Actions`. `Inventory` has no dependencies but sits early, since anything consuming an item wants it already up.
 
 **`class_name` classes** — not autoloaded, globally available, you instance them:
 
@@ -96,6 +96,49 @@ There is no `Party.swap_positions()`. Two different jobs, two different places:
 | Substitute a bench hero **between fights** | assign `character.position` directly |
 
 > ⚠️ **Caller-enforced invariant.** Exactly one hero must sit in each of `FRONT`, `CENTER`, `BACK1`; everyone else on `BACK2`. Nothing checks this today. Two heroes in one slot skews threat weighting; an empty slot loses a fighter. A `Party` helper that enforces it would be a reasonable addition.
+
+---
+
+## 👛 Inventory (autoload)
+
+**One inventory, shared by the whole party, with no capacity limit.** Items are stored as `item_id → count`, using the ids from `COMBAT_DATA.md`. An id the party doesn't hold is **absent, not zero**.
+
+### Signals
+| Signal | Arguments |
+|---|---|
+| `gold_changed` | `(amount: int)` — the new total |
+| `items_changed` | none |
+
+The shop and the HUD connect to these rather than polling.
+
+### Gold
+| Call | Returns |
+|---|---|
+| `gold: int` | Current total. Read freely |
+| `add_gold(amount: int)` | nothing. Ignores non-positive amounts |
+| `spend_gold(amount: int) -> bool` | `false` and **spends nothing** if unaffordable |
+| `can_afford(amount: int) -> bool` | — |
+
+### Items
+| Call | Returns |
+|---|---|
+| `add_item(item_id: String, count := 1)` | nothing |
+| `remove_item(item_id: String, count := 1) -> bool` | `false` and **removes nothing** if the party doesn't have that many |
+| `count_of(item_id: String) -> int` | `0` when absent |
+| `has_item(item_id: String) -> bool` | — |
+| `held_ids() -> Array` | Every id currently held, for listing in a menu |
+| `reset()` | Back to the starting loadout. New game only |
+
+```gdscript
+if Inventory.can_afford(price) and Inventory.spend_gold(price):
+    Inventory.add_item("item_potion")
+```
+
+`spend_gold()` and `remove_item()` both return `false` and change nothing when they can't complete, so a Buy button's disabled state can come from the same call that pays.
+
+> **Not here:** the revive counter. "Three revives per dungeon" is per-**run** state — keeping it in a persistent singleton would let it survive leaving the dungeon. It belongs to the M2 dungeon manager.
+
+> 🚧 `STARTING_GOLD` and `STARTING_ITEMS` are placeholders. Real numbers are **TBD** — see `COMBAT_DATA.md`.
 
 ---
 

@@ -13,6 +13,7 @@ res://
 ├── core/                     Shared game systems.
 │   ├── Elements.gd           (autoload) element rules, type chart, stat grades
 │   ├── Party.gd              (autoload) the 4-hero roster, loaded from data/
+│   ├── Inventory.gd          (autoload) party-wide gold + items
 │   ├── Targeting.gd          (autoload) enemy target selection + Guard
 │   ├── Transitions.gd        (autoload) scene stack, fade, push payloads
 │   ├── Combat.gd             (autoload) ALL damage and healing math
@@ -30,7 +31,8 @@ res://
 │   └── battle/               the fight screen + enemy.tscn
 ├── ui/                       UI scenes and themes
 │   ├── hud/                  In-battle overlays (hero_panel.tscn)
-│   ├── menus/                Full-screen screens (main_menu, skill_tree)
+│   ├── menus/                Full-screen screens
+│   │                         main_menu, skill_tree, shop, prep, victory/defeat
 │   └── themes/               .theme resources, shared styleboxes
 ├── assets/                   All art and audio (see NAMING.md for filenames)
 │   ├── sprites/              Characters, props, backgrounds, VFX
@@ -48,8 +50,8 @@ decision.
 ## Where does a new file go?
 
 **Shared systems go in `core/`.** Anything the whole game calls — combat rules,
-progression, party state, targeting, scene flow — lives here as an autoload or
-a `class_name` class.
+progression, party state, inventory, targeting, scene flow — lives here as an
+autoload or a `class_name` class.
 
 **Logic in `core/`, numbers in `data/`.** The class defines behaviour; the
 authored instances are data files:
@@ -63,8 +65,8 @@ data/enemies/mudling.tres    an instance of it
 ```
 
 Never hardcode a stat in a script. Hero stat blocks, enemy ratings, item and
-spell definitions and drop tables all belong in `data/` — `COMBAT_DATA.md` is
-the source for their values.
+spell definitions, shop prices and drop tables all belong in `data/` —
+`COMBAT_DATA.md` is the source for their values.
 
 **Gameplay scenes go in `scenes/`; full-screen screens go in `ui/menus/`.**
 A scene and its script share a name and sit together:
@@ -73,8 +75,13 @@ A scene and its script share a name and sit together:
 | Kind of screen | Home | Examples |
 |---|---|---|
 | The player moves or fights in it | `scenes/<feature>/` | map, battle |
-| Full-screen menu or management screen | `ui/menus/` | main menu, skill tree, victory/defeat, prep menu |
+| Full-screen menu or management screen | `ui/menus/` | main menu, skill tree, shop, prep menu, victory/defeat |
 | Overlay drawn on top of gameplay | `ui/hud/` | hero panel, damage numbers |
+
+The **shop is an overworld location** — the player walks to it on the map, so
+it's a full-screen screen pushed from `map.gd`, the same shape as the dungeon
+entrance. It lives in `ui/menus/` because it's a screen, not a place you move
+around in.
 
 **Art and audio go in `assets/`,** filed by category:
 
@@ -126,12 +133,14 @@ rely on.
 Registered in `project.godot`, and the order is load-bearing:
 
 ```
-Elements → Party → Targeting → Transitions → Combat → Actions → EnemyAI
+Elements → Party → Inventory → Targeting → Transitions → Combat → Actions → EnemyAI
 ```
 
 - `Party` builds its roster using `Elements`, so `Elements` must come first.
 - `EnemyAI` delegates its action-count formula to `Actions`, so `Actions` must
   come before it.
+- `Inventory` has no dependencies of its own. It sits early because anything
+  that consumes an item or spends gold will want it already up.
 
 `Character.gd`, `CreatureRating.gd`, `ActionBudget.gd` and `BattleState.gd` are
 deliberately **not** autoloaded — they declare `class_name`, which already
@@ -142,7 +151,7 @@ registers them globally, and doing both collides.
 | Doc | Authority over |
 |---|---|
 | `INTEGRATION_SEAMS.md` | Public function signatures, signals, and the combatant dictionary shape. |
-| `COMBAT_DATA.md` | Stats, ratings, growth, enemies, items, spells, drop tables, the type chart. |
+| `COMBAT_DATA.md` | Stats, ratings, growth, enemies, items, spells, drop tables, the type chart, prices. |
 | `NAMING.md` | Art and audio filenames, formats, dimensions. |
 | `STRUCTURE.md` (this) | Which folder a file belongs in. |
 | `CHANGELOG.md` | What changed, and the open decisions blocking work. |
