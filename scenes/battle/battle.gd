@@ -33,6 +33,10 @@ const ACTIVE_POSITIONS := [
 @onready var bgm: AudioStreamPlayer = $Bgm
 @onready var sfx: AudioStreamPlayer = $Sfx
 
+# Combatant dictionaries for this fight, from CreatureRating.build().
+# Handed over by whoever pushed this scene - see Transitions.payload().
+var enemy_dicts: Array = []
+
 # --- Setup ----------------------------------------------------------------
 
 func _ready() -> void:
@@ -41,16 +45,26 @@ func _ready() -> void:
 
 func _build_enemies() -> void:
 	# Enemy count is dynamic - one boss, one dungeon enemy, or a small group.
+	# The pusher decides which; we just render what we were handed.
 	#
-	# The data now exists: load a CreatureRating from data/enemies/ and call
-	# build() for the combatant dictionary BattleState.setup() wants.
+	#   Transitions.push("res://scenes/battle/battle.tscn", {
+	#       "enemies": [load("res://data/enemies/mudling.tres").build()],
+	#   })
 	#
-	#   var rating: CreatureRating = load("res://data/enemies/mudling.tres")
-	#   var enemy_dict := rating.build()        # optional tier_scale argument
-	#
-	# Still needed before this is wired: who decides WHICH enemies a given
-	# fight contains - that is the dungeon manager, M2.
-	pass
+	# Empty when the scene is launched directly, which is what main_scene does
+	# today - so this stays safe to run standalone.
+	enemy_dicts = Transitions.payload().get("enemies", [])
+
+	for e in enemy_dicts:
+		var node := spawn_enemy()
+		node.get_node("NameLabel").text = str(e.get("name", "ENEMY"))
+		var bar: ProgressBar = node.get_node("HpBar")
+		bar.max_value = int(e.get("max_hp", 1))
+		bar.value = int(e.get("hp", bar.max_value))
+
+	# BLOCKED: nothing drives the fight yet. BattleState needs the three active
+	# Characters plus enemy_dicts, and this scene needs a way to pop back with
+	# the result. Neither exists.
 
 func spawn_enemy() -> Node2D:
 	var e := ENEMY_SCENE.instantiate()
