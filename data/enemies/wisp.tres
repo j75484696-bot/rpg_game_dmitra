@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CreatureRating" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/CreatureRating.gd" id="1_cr"]
+
+[resource]
+script = ExtResource("1_cr")
+display_name = "Wisp"
+stat_element = 5
+rolls_element = true
+ratings = [10, 5, 4, 4, 4, 6]
+xp_value = 8
+overwhelm = false

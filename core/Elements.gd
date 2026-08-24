@@ -56,6 +56,17 @@ func base_stat(element: int, stat: int) -> int:
 	var grade: String = BASE[element][stat]
 	return STAT_SCALE[stat][grade]
 
+# --- Creature ratings -----------------------------------------------------
+# A rating of RATING_BASELINE means "exactly the element's base value", so the
+# 0-20 range spans x0.0 to x2.0. See core/CreatureRating.gd.
+const RATING_BASELINE := 10
+
+# base x rating / baseline x tier_scale, rounded. This is the ONLY place an
+# enemy stat is computed — don't hand-author enemy numbers anywhere.
+func rated_stat(element: int, stat: int, rating: int, tier_scale: float = 1.0) -> int:
+	var base: float = float(base_stat(element, stat))
+	return int(round(base * float(rating) / float(RATING_BASELINE) * tier_scale))
+
 # Damage multiplier when attacker's element hits defender's element
 func matchup(attacker_element: int, defender_element: int) -> float:
 	if defender_element in STRONG_VS[attacker_element]:
