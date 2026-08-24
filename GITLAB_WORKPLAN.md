@@ -2,7 +2,7 @@
 
 Everything below maps 1:1 to the production plan. Create the **labels** first, then the **milestones**, then import the issues.
 
-> ⚠️ GitLab's CSV issue import only reads **title** + **description**. So the CSV carries the milestone/labels/assignee *inside each description as text*. After importing, select issues on the board and bulk-apply the real labels + milestone. The full mapping is in the tables here so nothing is lost.
+> The tables below are the source of truth for who owns what and when. Create issues from them directly — there is no import file, and there doesn't need to be unless this plan moves somewhere else.
 
 
 ## 🏷️ Labels (create these first)
@@ -94,7 +94,7 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | Turn indicator | Coder B | type::feature, team::code, area::ui, priority::should |
 | Damage feedback (numbers + flash + shake) | Coder B | type::feature, team::code, area::ui, priority::should |
 | 4 hero battle sprites + hurt frames | Designer 1 | type::asset, team::art, area::characters, priority::must |
-| 3 enemy sprites | Designer 1 | type::asset, team::art, area::characters, priority::must |
+| 3 DUNGEON enemy sprites (Mudling, Frostbite Imp, Emberhound) | Designer 1 | type::asset, team::art, area::characters, priority::must |
 | Finish grass tileset | Designer 2 | type::asset, team::art, area::environment, priority::must |
 | Dungeon combat background | Designer 2 | type::asset, team::art, area::environment, priority::must |
 | Combat UI frame + bar graphics + action buttons | Designer 3 | type::asset, team::art, area::ui, priority::must |
@@ -112,7 +112,10 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | Map movement + camera follow | Coder B | type::feature, team::code, area::map, priority::must |
 | Dungeon entrance interaction | Coder B | type::feature, team::code, area::map, priority::must |
 | Random encounter roll on map | Coder B | type::feature, team::code, area::map, priority::should |
-| Boss sprite (+ optional lunge frame) | Designer 1 | type::asset, team::art, area::characters, priority::must |
+| 3 ENCOUNTER enemy sprites (Wisp, Critter, Brute) | Designer 1 | type::asset, team::art, area::characters, priority::must |
+| Boss sprite: Ashfang (+ optional lunge frame) | Designer 1 | type::asset, team::art, area::characters, priority::must |
+| Revive a downed hero with a potion (3 per dungeon) | Coder A | type::feature, team::code, area::dungeon, priority::must |
+| Wipe: eject from dungeon, lose rewards, keep XP | Coder A | type::feature, team::code, area::dungeon, priority::must |
 | Assemble map in Godot (tiles + props + marker) | Designer 2 | type::asset, team::art, area::environment, priority::must |
 | Dungeon map marker/icon | Designer 2 | type::asset, team::art, area::environment, priority::must |
 | Prep-menu UI | Designer 3 | type::asset, team::art, area::ui, priority::should |
@@ -130,6 +133,10 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | 4 consumables (potion/molotov/bomb/grenade) | Coder A | type::feature, team::code, area::items, priority::must |
 | Enemy drop pool + roll on clear | Coder A | type::feature, team::code, area::items, priority::should |
 | 1-2 equippable stat items | Coder A | type::feature, team::code, area::items, priority::nice |
+| Gold: award from enemies / dungeon clear | Coder A | type::feature, team::code, area::items, priority::must |
+| Decide shop stock, prices + starting loadout | Playtester | type::design, team::qa, area::items, priority::must |
+| Shop screen: buy / sell | Coder B | type::feature, team::code, area::items, priority::must |
+| Shop UI + gold icon + purchase SFX | Designer 3 | type::asset, team::art, area::ui, priority::should |
 | Skill tree screen (5 nodes) + spend point | Coder B | type::feature, team::code, area::progression, priority::must |
 | Show before/after stat number on spend | Coder B | type::feature, team::code, area::progression, priority::should |
 | Boss hurt frame + finish | Designer 1 | type::asset, team::art, area::characters, priority::should |
@@ -176,6 +183,6 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 
 1. **Create labels** — Project → Manage → Labels → New label. Paste name + hex color from the Labels table.
 2. **Create milestones** — Project → Plan → Milestones → New milestone (M0–M5), set the date range.
-3. **Import issues** — Project → Plan → Issues → (top-right ⋮) → Import CSV → upload `gitlab_issues_import.csv`.
-4. **Apply labels + milestone** — open the Issues list, tick a batch of related issues, use the right-side **Bulk edit** panel to apply the label(s) + milestone shown in this doc's tables.
-5. **Assign people** — same bulk-edit panel, or per issue. Swap my role names (Coder A, Designer 1...) for real @usernames.
+3. **Create issues** — one per row in the milestone tables above, title straight from the Work Item column.
+4. **Apply labels + milestone** — tick a batch of related issues in the Issues list and use the right-side **Bulk edit** panel.
+5. **Assign people** — same bulk-edit panel, or per issue. Swap the role names (Coder A, Designer 1...) for real @usernames.
