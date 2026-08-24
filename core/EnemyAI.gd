@@ -22,11 +22,9 @@ const OVERWHELM_HP_FRACTION := 0.5
 
 # --- Action economy -------------------------------------------------------
 
-# Enemies act off Stamina like heroes, but floor at 1 rather than 2 — the party
-# outnumbers them, so the hero floor would double incoming damage in every
-# fight. See COMBAT_DATA.md "Actions per turn".
+# Delegates to Actions so the formula lives in exactly one place.
 func actions_for(stamina: int) -> int:
-	return 1 + int(stamina / 30)
+	return Actions.max_for_enemy(stamina)
 
 # --- Planning a turn ------------------------------------------------------
 

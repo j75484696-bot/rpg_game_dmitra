@@ -22,6 +22,7 @@ Party="*res://core/Party.gd"
 Targeting="*res://core/Targeting.gd"
 Transitions="*res://core/Transitions.gd"
 Combat="*res://core/Combat.gd"
+Actions="*res://core/Actions.gd"
 EnemyAI="*res://core/EnemyAI.gd"
 
 [display]

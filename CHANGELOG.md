@@ -7,6 +7,37 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-24
+
+### Added
+- **`core/Actions.gd`** — autoload holding the action economy rules. The four
+  action types (`MELEE` `SPELL` `ITEM` `GUARD`), what each costs, how many
+  actions Stamina buys, and the Guard board helpers. Guard *arms* rather than
+  resolving: `Targeting.resolve_guard()` consumes the board when a hit lands.
+- **`core/ActionBudget.gd`** — `class_name` tracking one combatant's actions for
+  one turn. `reset()` `can_spend()` `spend()` `refund()` `is_spent()`. Not an
+  autoload — same pattern as `Character`. `spend()` returns false and changes
+  nothing when the budget can't cover it, so UI can drive a button's disabled
+  state off the same call that spends.
+
+### Changed
+- `EnemyAI.actions_for()` now delegates to `Actions.max_for_enemy()` instead of
+  carrying its own copy of `1 + int(STA / 30)`. The formula lives in one place.
+- `project.godot` — registered `Actions`, ordered before `EnemyAI` which now
+  depends on it.
+
+### Decided in code
+`COMBAT_DATA.md` states the 1-action cost only for items. These extend it:
+- **All four action types cost 1.** Split `Actions.COST` apart if a spell should
+  ever cost two.
+- **Actions don't bank** — anything unspent at end of turn is lost.
+- **Guard doesn't end your turn.** It's an action like any other, so a 3-action
+  hero can guard and still attack twice.
+- **One guardian protects one ally.** Declaring again reassigns rather than
+  stacking, so a guardian can never soak two allies at once.
+
+---
+
 ## 2026-08-21
 
 ### Added
