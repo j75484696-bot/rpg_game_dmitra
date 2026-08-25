@@ -7,6 +7,134 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-24 — Spec reconciliation
+
+A full audit of code against documentation, then a pass to close the gaps.
+The docs had drifted far enough that `INTEGRATION_SEAMS.md` documented three
+of seven autoloads, and the combatant dictionary it described would crash on
+first use — it omitted `element`, which `Combat` dereferences.
+
+### Added
+- **`core/CreatureRating.gd`** — enemy stats are now DERIVED, not authored.
+  A creature is three independent dials:
+
+      stat = round(element base x rating / 10 x tier_scale)
+
+  `ratings[]` is what kind of creature it is, `stat_element` is which numbers
+  it scales from, `tier_scale` is how hard this particular fight should be.
+  Turn one without disturbing the others.
+
+  **`stat_element` is deliberately separate from the rolled battle element.**
+  A creature with `rolls_element` computes stats from its fixed element but
+  rolls a random one for the matchup only. Without that split, a Wisp that
+  rolled Earth would come out slow and armoured — its identity has to live in
+  `ratings[]`, not in the dice.
+
+  Ratings are **fractional**, 0–25. Integers would only give 10% steps off the
+  element base, far too coarse to tune a 45 HP Wisp, and the boss needs 21.7
+  to reach 260 HP off Lava's base of 120. With fractions, **all seven
+  creatures reproduce their hand-authored stats exactly** — the system is live
+  and balance has not moved a single point.
+
+  `build()` returns the combatant dictionary `BattleState.setup()` expects,
+  which is also what closes the enemy-representation decision.
+- **`core/Inventory.gd`** — autoload. Party-wide gold and items, no capacity
+  limit, `id -> count` with absent-not-zero semantics. `gold_changed` and
+  `items_changed` signals. `spend_gold()` and `remove_item()` return false and
+  change nothing when they can't complete, so a Buy button's disabled state
+  comes from the same call that pays.
+- **`data/heroes/*.tres` and `data/enemies/*.tres`** — the numbers finally
+  live in `data/`, as `STRUCTURE.md` always claimed they did.
+- **`Transitions.push(path, payload)`** — scenes could stack but not talk.
+  The payload is appended before the scene is instanced, so it can be read in
+  `_ready()`, and it's stacked alongside its scene so popping restores the
+  one underneath.
+- **Currency and a shop**, scaffolded across `COMBAT_DATA.md`, the workplan,
+  `NAMING.md` and `STRUCTURE.md`. Every price and quantity is marked TBD
+  rather than invented.
+- **`Targeting.ACTIVE` / `is_active()`** — the three-slot rule in one place
+  instead of re-derived in five files.
+
+### Changed
+- **Enemy sprite work split.** The three encounter enemies were added on
+  2026-08-19, after the workplan was written, and the art count was never
+  bumped — Designer 1 was briefed for 3 sprites on a game needing 6. Dungeon
+  enemies stay must-have in M1; encounter enemies move to M2, alongside the
+  item that first needs them.
+- **`BACK2` is the bench, not a phantom slot.** It was simultaneously
+  documented as "unused", used by `Party.gd` to park the substitute, and
+  live in `POS_THREAT` with threat 10 — meaning a substitute built into a
+  fight was a legal target. Threat drops to 0, `threat_of()` and
+  `pick_overwhelm()` skip inactive slots, and `BattleState.setup()` warns and
+  skips. Exactly three heroes are targetable.
+- **Zeph SPD 34 → 28, Craig SPD 12 → 13**, so the hero table matches the
+  element letter grades it claims to derive from. Zeph stays the fastest hero.
+- **Menus moved to `ui/menus/`** — `main_menu.tscn` and the skill tree.
+  Settles the contradiction where `STRUCTURE.md` called `scenes/` "map,
+  battle, menus" while also defining `ui/menus/` as full-screen screens.
+- **The `core/` ownership boundary is gone.** Any file may edit any other,
+  provided `INTEGRATION_SEAMS.md` is updated in the same commit. One narrower
+  rule survives: all damage and healing math lives in `Combat.gd`.
+- **`README.md`** rewritten from the untouched GitLab template. The clone URL
+  pointed at the pre-move namespace and only worked via redirect.
+- `NAMING.md` — all 6 enemy slugs plus the boss, a slug rule so
+  `frostbite_imp` is unambiguous, hurt frames promoted to must-have, and the
+  leftover `_walk_` convention corrected to `_ow_`.
+
+### Decided
+Answers to nine questions that no document addressed, all of which are now in
+`COMBAT_DATA.md` under "Survival and recovery" and "Run structure":
+- **HP carries between fights.** No rest, no camp, no auto-heal.
+- **Potions are the only healing**, and **level-up raises max HP but not
+  current HP**.
+- **A downed hero is revived with a potion, mid-battle**, restoring the usual
+  +60 and clearing the downed status.
+- **Three revives per HERO per dungeon**, not per party. Potions themselves
+  are unlimited — the cap stops one fragile hero being farmed back, it isn't
+  the resource the player budgets. That resource is potion supply.
+- **A hero who dies a fourth time is out for the run.** Four heroes, three
+  slots: the first permanent loss is absorbed by the substitute, the second
+  leaves the party short-handed.
+- **Wiping ejects you from the dungeon and costs every reward except XP.**
+- **Ult resets between fights.** **Substitutes swap after every fight.**
+- **The shop is on the overworld**, so you cannot restock mid-run.
+- Clearing the dungeon ends the demo; the player can still roam to try gear.
+
+Together these make attrition the difficulty curve rather than any single
+fight, and point all the pressure at one decision: how many potions you
+bought before you went in.
+
+### Fixed
+- **`pick_target()` could return a member who was dead or benched.** A
+  boundary roll could land on a zero-threat entry, and the fallback
+  `return party.size() - 1` returned the last index regardless of state.
+- **`act()`'s GUARD path never validated its index.** `target_index` is
+  enemy-space for MELEE/SPELL/ITEM but hero-space for GUARD; only the melee
+  path bounds-checked. GUARD now rejects and refunds instead of writing a
+  bogus entry onto the guard board.
+- **`Party.gd` mutating cached resources.** `load()` caches, so spending a
+  stat point would have written back into the on-disk hero. `_load_hero()`
+  duplicates the resource and its arrays explicitly.
+- Removed the "stats don't change mid-fight" comment on the cached
+  `max_actions`. `Transitions` keeps a pushed-over scene alive, so a skill
+  tree opened above a battle could invalidate it. The cache stays; the false
+  reassurance doesn't.
+- Documented three behaviours that existed only inside `Targeting.gd` and
+  `EnemyAI.gd`: the **threat formula** (`positional base + DEF + HP/10`), the
+  fact that a **redirected Guard hit uses the original target's DEF** rather
+  than the guardian's, and that **enemy turns are planned up front**, so a
+  2-action enemy can be scheduled to hit someone who dies to the first blow.
+- Removed the CSV import step from the workplan. `gitlab_issues_import.csv`
+  never existed in the repo.
+
+### Superseded
+- **`"defense"` is now `"def"` again**, reversing the rename recorded under
+  Fixed on this date. `def` is shorter and it's the spelling the team wants;
+  nothing reads `"defense"` anywhere in the tree now. The earlier entry stays
+  as history rather than being rewritten.
+
+---
+
 ## 2026-08-24
 
 ### Added
@@ -48,11 +176,18 @@ has to read the diff to find out what moved.
 - **Turn order rebuilds each round**, so a SPD change mid-fight takes effect
   next round rather than never.
 
+> ⚠️ **These seven rules now live in `COMBAT_DATA.md` and
+> `INTEGRATION_SEAMS.md`**, where they belong. A changelog is a record of
+> change, not a source of truth.
+
 ### Fixed
 - **`Combat` now reads `"defense"`, not `"def"`.** `Targeting` has always used
   `member["defense"]`; `Combat` was written with `"def"`, so a single combatant
   dictionary could not feed both. Aligned on `Targeting`'s spelling since it
   came first. This is what let `BattleState` use one dict shape throughout.
+
+  > ⚠️ **Superseded — see "Spec reconciliation" above.** This was reversed:
+  > the project standardised on `"def"`. Kept here because it happened.
 
 ---
 
@@ -191,19 +326,52 @@ Things the code is waiting on. Each one blocks work that is otherwise ready.
 
 | Question | Blocks | Owner |
 |---|---|---|
-| Tile / sprite / base resolution numbers | Designer 2 can't size tiles; collision shapes left null | Team |
+| Tile / sprite / base resolution numbers | Designer 2 can't size tiles; all three collision shapes are null | Team |
 | Who is the party leader? | 10 overworld sprite files Designer 1 can't start | Team |
 | What do the 5 skill nodes do? | Skill tree can't be wired | Team |
-| Enemy representation (class + seam) | `_roll_encounter()`, `_build_enemies()` | Coder A |
-| Combat signals — the seams doc has none | All battle UI turn/damage/death reactions | Coder A + B |
 | Prereq logic in `unlock_skill()` | Gated skill tree is enforced UI-side today | Coder A |
-| `main_scene` is unset in `project.godot` | Nothing bootstraps the transition stack | Coder B |
+| `main_scene` boots straight to `battle.tscn` | Bypasses `Transitions` entirely, so the stack starts empty and `pop()` can never fire | Coder B |
 | Aria has no role now healing is gone | Party identity spread is thinner; affects balance pass | Team |
 | Is `water_2`'s 1.7 multiplier right? | Chosen to parallel `fire_2` (1.8) — needs sign-off | Team |
+| How does a finished battle report its result? | `push()` carries a payload in; nothing carries win/loss, drops or XP back out. May be moot if the M2 dungeon manager owns the whole sequence | Coder A + B |
+| Shop stock, prices, sell rate | Shop screen can't be built | Team |
+| Starting gold, potion count, and which four starter items | `Inventory.STARTING_*` are placeholders | Team |
+| Where does gold come from? | No enemy has a gold value | Team |
+| Does a fight run with fewer than three heroes? | `BattleState.setup()` will happily build two. Unclear whether that's intended or should end the run | Coder A |
+| Is "all heroes permanently out" a wipe? | Different condition from "all at 0 HP this fight", which is all `_party_wiped()` knows | Coder A |
+| `wind_2` / `earth_2` don't exist | `refresh_spells()` generates them at level 3, which is reachable in the demo | Team |
 
-### Known inconsistencies
-- `STRUCTURE.md` contradicts itself on menus: `scenes/` is labelled "map, battle,
-  menus" while `ui/menus/` is "Full-screen screens".
+### Closed since the last entry
+- ~~Enemy representation (class + seam)~~ — `CreatureRating` + `build()`.
+- ~~Combat signals — the seams doc has none~~ — all six documented.
+- ~~Ashfang can't reach 260 HP~~ — rating cap raised to 25, ratings made
+  fractional. He lands on 260 exactly.
+
+---
+
+## Known inconsistencies
+
+Real, understood, and not yet worth fixing — but don't be surprised by them.
+
+- **Nothing instantiates `BattleState` or calls `Transitions`.** Both are
+  complete and unreachable. Running the project shows an empty battle layout.
+  This is the single biggest gap between what the docs describe and what the
+  game does.
+- **`hero_panel.tscn` shows STA as a depleting bar** (`0/0`, like HP), but STA
+  is a static stat that only sets `max_actions`. The thing that depletes is
+  `ActionBudget.remaining`. Either relabel the bar `ACTIONS`, or document
+  stamina as a spendable resource.
+- **Action button text has three sources.** `Actions.LABEL` says
+  `Attack/Spell/Item/Guard`, `hero_panel.tscn` says `FIGHT/SPELL/ITEMS/GUARD`,
+  and `NAMING.md` names the art `ui_btn_attack/spell/item/guard.png`.
+- **Dark and Light are strong against each other**, so that pairing is ×1.5
+  both ways and the ×0.5 branch is unreachable for it. Nothing in the demo
+  uses either element.
+- **`skill_tree.gd`'s back button and `map.gd`'s dungeon entrance are never
+  connected.** There is no way to leave the skill tree, and no way to enter
+  the dungeon.
+- **`battle.tscn` contains `TargetPicker`, `TurnIndicator` and
+  `DamageNumbers`** that no script references yet.
 - The battle reference shows one shared action menu and a global burst gauge;
   the build uses per-hero menus and a per-hero ult bar (matching
   `COMBAT_DATA.md`).

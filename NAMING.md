@@ -246,10 +246,10 @@ Seven creatures total, per `COMBAT_DATA.md` — three dungeon enemies, three
 encounter enemies, one boss. One sprite each; encounter enemies do NOT get a
 sprite per element.
 
-**Dungeon enemies** (fought in order, fixed elements):
+**Dungeon enemies** (fought in order, fixed elements) — needed for **M1**:
 - **`enemy_mudling.png`**, **`enemy_frostbite_imp.png`**, **`enemy_emberhound.png`**
 
-**Encounter enemies** (random map fights, random element on spawn):
+**Encounter enemies** (random map fights, random element on spawn) — needed for **M2**, alongside the random encounter roll:
 - **`enemy_wisp.png`**, **`enemy_critter.png`**, **`enemy_brute.png`**
 
 **Boss:**
@@ -265,6 +265,7 @@ sprite per element.
 - **`tile_grass.png`**, **`tile_path.png`**, **`tile_grass_edge.png`**
 - **`prop_tree.png`**, **`prop_bush.png`**
 - **`ui_dungeon_marker.png`** (the map entrance icon)
+- **`ui_shop_marker.png`** (the shop's spot on the overworld)
 - **`bg_dungeon.png`** (single static battle background)
 - `bg_menu.png`, `bg_victory.png`, `bg_defeat.png`
 
@@ -274,9 +275,10 @@ sprite per element.
 - **`icon_spell_<element>_<n>.png`** ×6
 - **`icon_skill_1.png`** … `icon_skill_5.png`
 - **`icon_item_potion.png`**, **`icon_item_molotov.png`**, **`icon_item_bomb.png`**, **`icon_item_grenade.png`**
+- **`ui_shop_panel.png`** (shop screen frame), **`icon_gold.png`** (currency)
 - `vfx_fire_01.png`, `vfx_water_01.png`, `vfx_wind_01.png`, `vfx_earth_01.png`
 - `ui_title_logo.png`
 
 ### Audio (Designer 3)
 - **`bgm_battle.ogg`**, `bgm_map.ogg`, `bgm_menu.ogg`, `bgm_victory.ogg`
-- **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`
+- **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`, `sfx_purchase.ogg`

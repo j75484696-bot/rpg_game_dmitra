@@ -1,11 +1,22 @@
-# Transitions.gd — Autoload singleton. Owns the scene stack and the fade overlay.
+# Transitions.gd - Autoload singleton. Owns the scene stack and the fade overlay.
 #
 # Scenes STACK rather than swap: pushing a scene leaves the one below loaded but
-# hidden and paused, so its state survives for free — the map keeps the player's
+# hidden and paused, so its state survives for free - the map keeps the player's
 # position while a fight runs on top of it.
 #
 # Scenes need no special code to be stackable. This node handles visibility and
 # pausing, so anything can be pushed.
+#
+# A push can carry a PAYLOAD - the dictionary the incoming scene needs in order
+# to do its job, e.g. which enemies a fight contains:
+#
+#     await Transitions.push("res://scenes/battle/battle.tscn", {
+#         "enemies": [rating.build()],
+#     })
+#
+# The incoming scene reads it in _ready():
+#
+#     var enemies: Array = Transitions.payload().get("enemies", [])
 extends Node
 
 signal transition_started
@@ -15,6 +26,9 @@ const FADE_TIME := 0.25
 const OVERLAY_LAYER := 128   # above every in-game CanvasLayer
 
 var _stack: Array[Node] = []
+# Runs parallel to _stack, one entry per scene, so popping back to the map
+# restores the map's payload instead of leaving the battle's behind.
+var _payloads: Array[Dictionary] = []
 var _busy := false
 var _host: Node
 var _fade: ColorRect
@@ -50,11 +64,16 @@ func current() -> Node:
 func depth() -> int:
 	return _stack.size()
 
+# The payload the current scene was pushed with. Empty when there is none, so
+# a scene launched directly (main_scene, or from the editor) still runs.
+func payload() -> Dictionary:
+	return _payloads.back() if not _payloads.is_empty() else {}
+
 # --- Moving between scenes ------------------------------------------------
 
 # Push a scene on top. The one below stays loaded, hidden and paused.
-# e.g. await Transitions.push("res://scenes/battle/battle.tscn")
-func push(scene_path: String) -> void:
+# e.g. await Transitions.push("res://scenes/battle/battle.tscn", { "enemies": [] })
+func push(scene_path: String, scene_payload: Dictionary = {}) -> void:
 	if _busy:
 		return
 	_busy = true
@@ -64,6 +83,9 @@ func push(scene_path: String) -> void:
 	var below := current()
 	if below:
 		_set_active(below, false)
+	# Appended BEFORE instancing so the new scene can read payload() in _ready().
+	# Duplicated so a caller mutating its own copy can't reach into a live scene.
+	_payloads.append(scene_payload.duplicate(true))
 	_stack.append(_instance(scene_path))
 
 	await _fade_in()
@@ -79,6 +101,7 @@ func pop() -> void:
 	await _fade_out()
 
 	var leaving: Node = _stack.pop_back()
+	_payloads.pop_back()
 	leaving.queue_free()
 	_set_active(current(), true)
 
@@ -88,7 +111,7 @@ func pop() -> void:
 
 # Clear the whole stack and start fresh. Use for main menu -> map, or a wipe
 # sending the player back to the title.
-func replace(scene_path: String) -> void:
+func replace(scene_path: String, scene_payload: Dictionary = {}) -> void:
 	if _busy:
 		return
 	_busy = true
@@ -98,6 +121,8 @@ func replace(scene_path: String) -> void:
 	for scene in _stack:
 		scene.queue_free()
 	_stack.clear()
+	_payloads.clear()
+	_payloads.append(scene_payload.duplicate(true))
 	_stack.append(_instance(scene_path))
 
 	await _fade_in()
