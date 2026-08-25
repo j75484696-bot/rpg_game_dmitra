@@ -26,10 +26,34 @@ Enemies + bosses use the same `bidle` / `atk` patterns with `enemy_` / `boss_` p
 | Type | Pattern | Example |
 |---|---|---|
 | Hero (combat) | `hero_<name>.png` | `hero_ignis.png` |
-| Enemy | `enemy_<name>.png` | `enemy_goblin.png` |
+| Enemy | `enemy_<name>.png` | `enemy_mudling.png` |
 | Boss | `boss_<name>.png` | `boss_ashfang.png` |
 | Tile | `tile_<type>.png` | `tile_grass.png` |
 | Prop | `prop_<type>.png` | `prop_tree.png` |
+
+### Agreed `<name>` slugs
+
+These are the only names in play. A slug is the creature's name from
+`COMBAT_DATA.md`, lowercased, spaces replaced with underscores. Adding a
+creature means adding its slug here first.
+
+| Role | Creature (COMBAT_DATA) | Slug | Prefix |
+|---|---|---|---|
+| Hero | Ignis | `ignis` | `hero_` |
+| Hero | Aria | `aria` | `hero_` |
+| Hero | Zeph | `zeph` | `hero_` |
+| Hero | Craig | `craig` | `hero_` |
+| Encounter enemy | Wisp | `wisp` | `enemy_` |
+| Encounter enemy | Critter | `critter` | `enemy_` |
+| Encounter enemy | Brute | `brute` | `enemy_` |
+| Dungeon enemy | Mudling | `mudling` | `enemy_` |
+| Dungeon enemy | Frostbite Imp | `frostbite_imp` | `enemy_` |
+| Dungeon enemy | Emberhound | `emberhound` | `enemy_` |
+| Boss | Ashfang | `ashfang` | `boss_` |
+
+> Encounter enemies roll a random **element** on spawn, so they get **one**
+> sprite each — the element is not part of the filename. Element is shown via
+> the UI/VFX, not by swapping the sprite.
 
 ---
 
@@ -57,7 +81,7 @@ hero_craig_ow_right_01.png
 ```
 
 **Conventions (agree once, never break):**
-- `_walk_` frames are the MOVING cycle only. The standing-still pose is the separate **idle** animation below — don't reuse a walk frame as idle.
+- `_ow_` frames are the MOVING cycle only. The standing-still pose is the separate **idle** animation below — don't reuse an `_ow_` frame as idle.
 - Frames play in ascending order then loop back to `01`.
 - **Left/right:** if the artist mirrors `left` to make `right` (common + fast), still export BOTH files — don't make the coder flip it in engine.
 - **Demo target:** 2-frame walk (`01`, `02`) per direction = 8 files per hero. Full version: 4 frames per direction = 16 per hero.
@@ -94,7 +118,7 @@ Battle animations don't need directions (combat is front-facing). Frames zero-pa
 
 ```
 hero_<name>_atk_<frame>.png       ← hero attacking
-hero_<name>_hurt.png              ← single flinch frame (optional, code flash covers it)
+hero_<name>_hurt.png              ← single flinch frame (REQUIRED, see below)
 enemy_<name>_atk_<frame>.png      ← enemy attacking
 boss_<name>_atk_<frame>.png       ← boss attacking
 ```
@@ -105,14 +129,15 @@ hero_ignis_atk_01.png
 hero_ignis_atk_02.png
 hero_ignis_atk_03.png
 hero_craig_hurt.png
-enemy_goblin_atk_01.png
+enemy_mudling_atk_01.png
 boss_ashfang_atk_01.png
 boss_ashfang_atk_02.png
 ```
 
 **Conventions:**
 - The **static combat sprite** (`hero_ignis.png`) is the fallback resting pose. Attack frames are the extra motion on top; the looping breathe is the separate battle idle below.
-- **Demo target:** 1–2 attack frames each. Movement (lunge toward enemy, recoil) is done in CODE via tween — the frames are just the pose change (e.g. weapon raised). Deaths + hits = code fade/flash/shake, **no frames needed**.
+- **Hurt is a must-have**, one frame per hero, per `GITLAB_WORKPLAN.md` M1 ("4 hero battle sprites + hurt frames", `priority::must`). Code still flashes/shakes on top — the frame is the pose, not the whole effect.
+- **Demo target:** 1–2 attack frames each. Movement (lunge toward enemy, recoil) is done in CODE via tween — the frames are just the pose change (e.g. weapon raised). Deaths = code fade/flash/shake, **no frames needed**.
 - If a character has NO attack frames yet, code lunges the static sprite so combat still works. Attack frames are an upgrade, not a blocker.
 
 ---
@@ -131,7 +156,7 @@ boss_<name>_bidle_<frame>.png      ← boss battle idle
 ```
 hero_ignis_bidle_01.png
 hero_ignis_bidle_02.png
-enemy_goblin_bidle_01.png
+enemy_mudling_bidle_01.png
 boss_ashfang_bidle_01.png
 boss_ashfang_bidle_02.png
 ```
@@ -140,7 +165,7 @@ boss_ashfang_bidle_02.png
 - `bidle` = "battle idle" (kept short + distinct from overworld `idle`).
 - Loops `01 → 02 → …` and back. A slow 2-frame breathe is enough.
 - Fallback: if no `bidle` frames exist, code shows the static combat sprite (`hero_ignis.png`) and adds a gentle sway/scale tween — so it still feels alive with zero frames.
-- **Demo target:** 2 frames each for the 4 heroes + boss. Normal enemies can rely on the code-sway fallback if art time is short.
+- **Demo target:** 2 frames each for the 4 heroes + boss. The 6 normal enemies can rely on the code-sway fallback if art time is short.
 
 ---
 
@@ -210,16 +235,31 @@ Check these off as they're made. **Bold = must-have; others = nice-to-have.**
 ### Heroes (Designer 1)
 - **`hero_ignis.png`**, **`hero_aria.png`**, **`hero_zeph.png`**, **`hero_craig.png`** (static combat sprite / fallback)
 - **`hero_<name>_bidle_01.png`** + `_02` — battle idle breathe, all 4 heroes
+- **`hero_<name>_hurt.png`** — single flinch frame, all 4 heroes
 - `hero_<name>_atk_01.png` … 1–2 attack frames each
 - `hero_<name>_hover_01.png` — optional menu hover pose (code hover preferred, skip unless showing off)
 - Party-leader overworld set: **`hero_<leader>_ow_<dir>_01.png`** + `_02` (walk) for down/up/left/right, plus **`hero_<leader>_idle_down_01.png`** + `_02` (map idle bob)
 
 ### Enemies + Boss (Designer 1)
-- **`enemy_<a>.png`**, **`enemy_<b>.png`**, **`enemy_<c>.png`** (3 normal, static)
-- **`boss_ashfang.png`** (rename to your boss)
+
+Seven creatures total, per `COMBAT_DATA.md` — three dungeon enemies, three
+encounter enemies, one boss. One sprite each; encounter enemies do NOT get a
+sprite per element.
+
+**Dungeon enemies** (fought in order, fixed elements):
+- **`enemy_mudling.png`**, **`enemy_frostbite_imp.png`**, **`enemy_emberhound.png`**
+
+**Encounter enemies** (random map fights, random element on spawn):
+- **`enemy_wisp.png`**, **`enemy_critter.png`**, **`enemy_brute.png`**
+
+**Boss:**
+- **`boss_ashfang.png`**
 - **`boss_ashfang_bidle_01.png`** + `_02` — boss battle idle
-- `enemy_<x>_bidle_01.png` — enemy battle idle (optional; code-sway fallback if skipped)
-- `enemy_<x>_atk_01.png` / `boss_ashfang_atk_01.png` (optional)
+- `boss_ashfang_atk_01.png` (optional)
+
+**Optional per-enemy extras:**
+- `enemy_<name>_bidle_01.png` — battle idle (code-sway fallback if skipped)
+- `enemy_<name>_atk_01.png` — attack pose (code lunge fallback if skipped)
 
 ### Environment (Designer 2)
 - **`tile_grass.png`**, **`tile_path.png`**, **`tile_grass_edge.png`**

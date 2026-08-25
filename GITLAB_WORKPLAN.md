@@ -86,7 +86,7 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | Damage calc (ATT/MAG - DEF flat x element matchup) | Coder A | type::feature, team::code, area::combat, priority::must |
 | Guard action (redirect hit -40%) | Coder A | type::feature, team::code, area::combat, priority::must |
 | Enemy AI (threat targeting + attack) | Coder A | type::feature, team::code, area::combat, priority::must |
-| Ultimate meter (fills on dealt + taken) + placeholder ult | Coder A | type::feature, team::code, area::combat, priority::should |
+| Ultimate meter (fills on dealt + taken) + placeholder ult | Coder A | type::feature, team::code, area::combat, priority::must |
 | Combat scene layout + hero panels | Coder B | type::feature, team::code, area::ui, priority::must |
 | Action menu buttons (melee/spell/item/guard) | Coder B | type::feature, team::code, area::ui, priority::must |
 | Target picker | Coder B | type::feature, team::code, area::ui, priority::must |
