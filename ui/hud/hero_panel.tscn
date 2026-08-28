@@ -1,8 +1,13 @@
 [gd_scene format=3]
 
 [node name="HeroPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(210, 0)
 
 [node name="Margin" type="MarginContainer" parent="."]
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
 
 [node name="Rows" type="VBoxContainer" parent="Margin"]
 
@@ -15,6 +20,7 @@ text = "HERO"
 text = "HP"
 
 [node name="HpBar" type="ProgressBar" parent="Margin/Rows/HpRow"]
+custom_minimum_size = Vector2(90, 0)
 size_flags_horizontal = 3
 show_percentage = false
 
@@ -24,9 +30,10 @@ text = "0/0"
 [node name="StaminaRow" type="HBoxContainer" parent="Margin/Rows"]
 
 [node name="StaminaTag" type="Label" parent="Margin/Rows/StaminaRow"]
-text = "STA"
+text = "ACT"
 
 [node name="StaminaBar" type="ProgressBar" parent="Margin/Rows/StaminaRow"]
+custom_minimum_size = Vector2(90, 0)
 size_flags_horizontal = 3
 show_percentage = false
 
@@ -39,20 +46,6 @@ text = "0/0"
 text = "ULT"
 
 [node name="UltBar" type="ProgressBar" parent="Margin/Rows/UltRow"]
+custom_minimum_size = Vector2(90, 0)
 size_flags_horizontal = 3
 show_percentage = false
-
-[node name="Actions" type="GridContainer" parent="Margin/Rows"]
-columns = 2
-
-[node name="AttackButton" type="Button" parent="Margin/Rows/Actions"]
-text = "FIGHT"
-
-[node name="SpellButton" type="Button" parent="Margin/Rows/Actions"]
-text = "SPELL"
-
-[node name="ItemButton" type="Button" parent="Margin/Rows/Actions"]
-text = "ITEMS"
-
-[node name="GuardButton" type="Button" parent="Margin/Rows/Actions"]
-text = "GUARD"

@@ -7,6 +7,45 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27
+
+### Added
+- **The battle scene runs a real fight.** `battle.gd` now builds a
+  `BattleState` from the three active heroes plus the enemies it was handed,
+  connects all six signals, and drives the loop end to end. Verified by
+  auto-playing it headless: turn order by Speed, damage, deaths, victory.
+- **`scenes/battle/hero.tscn`** — heroes had no scene, so there was nothing to
+  step forward. Carries a placeholder sprite and a `ClickArea`, which Guard and
+  potions need anyway since they target allies.
+- **`scenes/battle/damage_number.tscn`** — a Label that floats and fades,
+  spawned per hit over the combatant that took it.
+
+### Changed
+- **The action menu is now ONE shared menu**, re-pointed at whoever is acting,
+  instead of a set per hero. Buttons grey out via `budget.can_spend()` — the
+  same call that would spend — so the stamina economy is visible. Dropped 12
+  buttons to 4 and matches the team's reference layout.
+- **The turn cue is the step-forward**, not an indicator widget. The acting
+  character slides toward the enemy while everyone else drifts back. Enemies
+  step too, or a 2-action enemy lands two hits with nothing marking who.
+- **`TargetPicker` removed.** Click-the-sprite made a central picker
+  redundant — each combatant owns its `ClickArea`. What was real is the modal
+  "what is clickable now" state, which is two variables in `battle.gd`, not a
+  node. Guard flips the valid side from enemies to allies.
+- `hero_panel.tscn` is now a pure status display — name, HP, live action
+  budget, ult. Its button grid moved to the shared menu.
+- Placeholder art throughout: `ColorRect` characters, flat background. Swapping
+  in real art means pointing nodes at textures; no logic changes.
+
+### Fixed
+- **`combatant_died` fired before the blow that caused it.** `_apply_damage()`
+  emitted immediately while `action_taken` came after, so the log read
+  "Mudling is down!" *then* "Aria hits Mudling for 13". Deaths are now queued
+  and flushed after the action is reported. Found by reading the auto-play
+  output rather than by inspection.
+
+---
+
 ## 2026-08-24 — Spec reconciliation
 
 A full audit of code against documentation, then a pass to close the gaps.

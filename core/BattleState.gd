@@ -41,6 +41,10 @@ var guards: Dictionary = {}
 var order: Array = []
 var turn_cursor: int = -1
 
+# Deaths waiting to be announced. Held until the action that caused them has
+# been reported, so the log reads in the order things actually happened.
+var _pending_deaths: Array = []
+
 # --- Setup ---------------------------------------------------------------
 
 # heroes_in: the three active Characters.
@@ -205,6 +209,7 @@ func act(type: int, target_index: int) -> bool:
 			Actions.declare_guard(guards, t["index"], target_index)
 
 	action_taken.emit(t["index"], true, type, target_index, amount)
+	_flush_deaths()
 	if _check_end():
 		return true
 	if actor["budget"].is_spent():
@@ -227,6 +232,7 @@ func _run_enemy_turn(enemy_index: int) -> void:
 		var hit: int = int(step["target"])
 		_apply_damage(heroes[hit], int(step["damage"]), hit, true)
 		action_taken.emit(enemy_index, false, Actions.TYPE.MELEE, hit, int(step["damage"]))
+		_flush_deaths()
 	turn_ended.emit(enemy_index, false)
 	_advance()
 
@@ -248,7 +254,14 @@ func _apply_damage(target: Dictionary, amount: int, index: int, is_hero: bool) -
 		target["alive"] = false
 		if is_hero:
 			Actions.clear_guard(guards, index)
-		combatant_died.emit(index, is_hero)
+		# Queued, not emitted. A death must be announced AFTER the blow that
+		# caused it, or the log reads "X is down" before "Y hits X".
+		_pending_deaths.append({ "index": index, "is_hero": is_hero })
+
+func _flush_deaths() -> void:
+	while not _pending_deaths.is_empty():
+		var d: Dictionary = _pending_deaths.pop_front()
+		combatant_died.emit(d["index"], d["is_hero"])
 
 # --- Win / lose ----------------------------------------------------------
 
