@@ -1,0 +1,10 @@
+[gd_resource type="Theme" load_steps=2 format=3]
+
+[ext_resource type="FontFile" uid="uid://k2jn5snyd850" path="res://assets/fonts/alagard.ttf" id="1"]
+
+[resource]
+default_font = ExtResource("1")
+default_font_size = 16
+Label/font_sizes/font_size = 16
+Button/font_sizes/font_size = 16
+RichTextLabel/font_sizes/normal_font_size = 16

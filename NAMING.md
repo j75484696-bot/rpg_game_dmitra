@@ -316,6 +316,15 @@ sprite per element.
 - `vfx_fire_01.png`, `vfx_water_01.png`, `vfx_wind_01.png`, `vfx_earth_01.png`
 - `ui_title_logo.png`
 
+### Fonts
+- **`alagard.ttf`** — the UI typeface, in `assets/fonts/`. Applied project-wide
+  through `ui/themes/main.tres`, so nothing sets a font per node.
+- **Import settings matter:** `antialiasing=0`, `hinting=0`,
+  `subpixel_positioning=0`. Godot defaults all three ON, which blurs a pixel
+  font exactly the way linear filtering blurs a pixel sprite.
+- Used at **16px**. Pixel fonts stay crisp only at their native size or exact
+  integer multiples — 14px or 20px will go soft.
+
 ### Audio (Designer 3)
 - **`bgm_battle.ogg`**, `bgm_map.ogg`, `bgm_menu.ogg`, `bgm_victory.ogg`
 - **`sfx_hit.ogg`**, **`sfx_cast.ogg`**, **`sfx_hurt.ogg`**, **`sfx_button.ogg`**, `sfx_levelup.ogg`, `sfx_victory.ogg`, `sfx_item.ogg`, `sfx_purchase.ogg`

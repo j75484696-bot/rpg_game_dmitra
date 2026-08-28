@@ -7,6 +7,38 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-28 — UI font
+
+### Added
+- **`assets/fonts/alagard.ttf`** — the UI typeface. Every label, button, bar
+  and log in the game was Godot's default anti-aliased sans-serif until now,
+  which read as placeholder UI against 64×64 pixel art.
+- **`ui/themes/main.tres`** — a project-wide theme, registered as
+  `gui/theme/custom`. One resource styles every `Label`, `Button`,
+  `ProgressBar` and `RichTextLabel` in the game, so nothing sets a font per
+  node. It is also the natural home for button styling when
+  `ui_btn_*.png` arrives.
+
+### Import settings that matter
+Godot defaults **antialiasing on, hinting on, subpixel positioning auto** —
+all three blur a pixel font exactly the way linear filtering blurred the
+sprites. Set to `0 / 0 / 0`. Used at **16px**; pixel fonts stay crisp only at
+their native size or exact integer multiples.
+
+Verified in-engine: labels and buttons both report `Alagard` at 16.
+
+### Fixed
+- **`.theme` is Godot's *binary* extension.** A hand-written text resource has
+  to be `.tres`, or the project fails to load it —
+  `Unrecognized binary resource file`. `STRUCTURE.md` describes
+  `ui/themes/` as holding ".theme resources", which is what led me wrong.
+
+### Closed
+- ~~No font specified anywhere~~ — `NAMING.md` now has a Fonts section.
+  `assets/fonts/` is no longer empty.
+
+---
+
 ## 2026-08-27 — doc sync
 
 Docs brought back in step with the code after the art pass. Four drifts, all
