@@ -126,6 +126,10 @@ Every other pairing is neutral.
 > in both directions and never ×0.5. Nothing in the demo uses either element,
 > so it's harmless today — but it's the one asymmetry in the chart.
 
+**On screen:** a super-effective hit flashes the target **red-white** instead of
+white, and the battle log appends `SUPER EFFECTIVE`. Nothing else teaches the
+chart, so that tell is the whole feedback loop.
+
 **What this means for the demo:** Zeph shreds Mudling (Wind→Earth). Ignis
 shreds Frostbite Imp (Fire→Ice). Aria shreds Emberhound and Ashfang
 (Water→Fire, Water→Lava). Ashfang resists Ignis and Zeph (Lava is strong

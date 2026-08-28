@@ -7,6 +7,43 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-28 — damage flash and shake
+
+### Added
+- **Hit flash.** The struck combatant overbrights on impact and fades back over
+  0.16s. Values above 1.0 blow out rather than merely lighten, which reads as
+  impact instead of a colour change.
+- **Hit shake.** Three-step displacement, 7px out, 4px back, settle — 0.15s
+  total.
+- **Super-effective hits flash red-white** instead of white, and the log
+  appends `SUPER EFFECTIVE`. The multiplier is read from `Elements.matchup()`
+  rather than re-derived, so the tell can never disagree with the damage.
+  Nothing else in the game teaches the type chart.
+
+### The thing that made this non-trivial
+Both effects act on the **Sprite child**, never on the node or slot that does
+the step-forward. Heroes step by moving their *slot* and enemies by moving
+*themselves* — so shaking the node would have been safe for heroes and would
+have fought the turn cue for enemies. Two tweens on one position property means
+the loser's target is where the character stays parked.
+
+Each effect also kills its own previous tween, and the shake resets `x` to 0
+before starting, since an interrupted shake can leave the sprite mid-swing.
+
+Verified in-engine, including that the step-forward still lands on its home x
+after a shake:
+
+    rest        modulate (1,1,1)        x 0.0
+    on hit      modulate (3.0,1.1,1.1)  <- super-effective tint
+    mid-shake   x 1.0                   <- displaced
+    settled     modulate (1,1,1)        x 0.0
+    enemy node  x 890.0 = home 890.0    <- step unaffected
+
+That tint fired because Zeph is Wind and Mudling is Earth — the chart driving
+the visual, unprompted.
+
+---
+
 ## 2026-08-28 — the ultimate is usable
 
 ### Added
