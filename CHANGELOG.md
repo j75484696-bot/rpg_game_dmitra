@@ -7,6 +7,36 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — hero art
+
+### Added
+Three 1024×64 strips, 16 frames at 12fps, assigned by their elemental tell:
+
+| Character | Tell |
+|---|---|
+| **Ignis** | cradling a glowing orange ember — Fire |
+| **Aria** | pale blue flames rising — Water |
+| **Zeph** | white-blue vortex rings spinning around the body — Wind |
+
+Every combatant in the default fight now has real art. No placeholders on
+screen.
+
+### Changed
+- **Ignis swapped into the lineup for Craig.** `ignis.tres` position 3 → 0
+  (Front), `craig.tres` 0 → 3 (bench). Craig has no art yet, and the point was
+  to see the animations.
+
+> ⚠️ **This is a balance change, not just a visual one.** Front draws **50
+> threat**, the highest in the game, and Ignis is the glass cannon — 100 HP and
+> 16 DEF against Craig's 120/32. He will take the most hits while being the
+> least able to survive them. Fine for looking at the art; move him to Back1
+> before any balance judgement is made from a playtest.
+
+### Still placeholder
+- **Craig** (benched), plus **Critter** and **Brute**.
+
+---
+
 ## 2026-08-27 — Mudling art
 
 ### Added
