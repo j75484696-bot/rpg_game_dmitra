@@ -208,6 +208,15 @@ func _refresh_panels(animate: bool = true) -> void:
 		_set_bar(act_bar, budget.remaining, animate)
 		rows.get_node("StaminaRow/StaminaValue").text = "%d/%d" % [budget.remaining, budget.max_actions]
 
+		# Ult charge lives on the Character, not the combatant dict, because it
+		# persists across fights. 0-100, fills from damage dealt and taken.
+		var ult_bar: ProgressBar = rows.get_node("UltRow/UltBar")
+		ult_bar.max_value = Character.ULT_FULL
+		var charge: int = int(h["source"].ult_meter) if h.has("source") else 0
+		_set_bar(ult_bar, charge, animate)
+		# Ready is worth shouting about — it is the one action with no cost.
+		ult_bar.modulate = Color(1.4, 1.25, 0.6) if charge >= Character.ULT_FULL else Color.WHITE
+
 		# Dimmed rather than hidden, so the player still sees who fell.
 		panel.modulate = Color.WHITE if h["alive"] else Color(0.45, 0.45, 0.45)
 

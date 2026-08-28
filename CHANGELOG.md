@@ -7,6 +7,38 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-28 — ultimate meter
+
+### Added
+- **`Character.ult_meter`** plus `is_ult_ready()`, `spend_ult()` and
+  `gain_ult()` — built to the signatures locked in `INTEGRATION_SEAMS.md`,
+  which have been ⏳ since the project started. `gain_ult()` calls
+  `Combat.ult_gain()` and owns only the clamp; the doc is explicit that
+  `Combat` owns the rates and they must not be reimplemented.
+- **The ult bar is live** in all three hero panels, and glows gold at 100.
+
+### Changed
+- **The hero combatant dictionary now carries `source`**, the `Character` it was
+  built from. Ult charge has to persist across fights, and the combatant dict
+  dies with the battle scene — so the meter is written back to the Character
+  rather than held in the fight.
+- `BattleState` charges the meter from both directions: the actor gains on
+  damage **dealt** in `act()`, the target gains on damage **taken** in
+  `_apply_damage()`.
+
+Verified both directions in-engine rather than by inspection:
+
+    Zeph deals 19  -> ult 9    (19 / 2)
+    Aria takes 40  -> ult 10   (40 / 4)
+
+Ignis and Aria correctly stayed at 0 while Zeph acted.
+
+### Confirmed working
+- **Enemy HP bars render.** `visible=true`, 80×14, on screen above each sprite,
+  tracking real HP.
+
+---
+
 ## 2026-08-28 — bars drain
 
 ### Changed

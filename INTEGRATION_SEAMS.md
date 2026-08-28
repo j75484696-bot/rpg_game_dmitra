@@ -511,8 +511,8 @@ nothing else needs to know how art is stored.
 | `char.level_up()` | `void` |
 | `char.spend_point_on_stat(i)` / `unlock_skill(id)` | `bool` |
 | `char.equip_spell(id)` / `unequip_spell(id)` | `bool` |
-| ⏳ `char.has_skill(id)` / `is_ult_ready()` / `spend_ult()` | `bool` |
-| ⏳ `char.gain_ult(dealt, taken)` | `void` |
+| ⏳ `char.has_skill(id)` · `char.is_ult_ready()` / `spend_ult()` | `bool` |
+| `char.gain_ult(dealt, taken)` | `void` |
 | `Elements.matchup(a, d)` | `float` (1.5 / 1.0 / 0.5) |
 | `Elements.name_of(e)` | `String` |
 | `Elements.base_stat(e, stat)` | `int` |

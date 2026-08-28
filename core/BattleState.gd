@@ -76,6 +76,9 @@ func _combatant_from_character(c: Character) -> Dictionary:
 	m["max_actions"] = c.max_actions()
 	m["alive"] = true
 	m["budget"] = ActionBudget.new()
+	# The Character itself, so ult charge can be written back. The meter has to
+	# persist across fights, and this dictionary dies with the battle.
+	m["source"] = c
 	return m
 
 func _combatant_from_dict(e: Dictionary) -> Dictionary:
@@ -208,6 +211,10 @@ func act(type: int, target_index: int) -> bool:
 				return false
 			Actions.declare_guard(guards, t["index"], target_index)
 
+	# Ult charges on damage DEALT. Character owns the clamp, Combat the rates.
+	if amount > 0 and actor.has("source"):
+		actor["source"].gain_ult(amount, 0)
+
 	action_taken.emit(t["index"], true, type, target_index, amount)
 	_flush_deaths()
 	if _check_end():
@@ -250,6 +257,9 @@ func _damage_enemy(actor: Dictionary, target_index: int) -> int:
 
 func _apply_damage(target: Dictionary, amount: int, index: int, is_hero: bool) -> void:
 	target["hp"] = max(0, int(target["hp"]) - amount)
+	# And on damage TAKEN — a hero being beaten on builds toward their ult.
+	if is_hero and amount > 0 and target.has("source"):
+		target["source"].gain_ult(0, amount)
 	if target["hp"] <= 0 and target["alive"]:
 		target["alive"] = false
 		if is_hero:
