@@ -7,6 +7,43 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — doc sync
+
+Docs brought back in step with the code after the art pass. Four drifts, all
+introduced by this session's own work.
+
+### Fixed
+- **`COMBAT_DATA.md` contradicted `data/heroes/*.tres`.** The positions table
+  still showed Craig at Front and Ignis benched; the data holds the inverse
+  since the hero-art swap. The table now matches the data and carries a warning
+  that the swap is temporary, why it was made, and exactly what to revert.
+- **`NAMING.md` had no sprite-sheet convention at all** — it specs individual
+  frame files and says nothing about strips, so the rule that actually drives
+  art loading lived only in commit messages. Now a section of its own: single
+  row, square cells, no padding, free frame count, and the filename-is-the-
+  wiring lookup.
+- **`bg_field.png` was missing from `NAMING.md`.** Backgrounds listed only
+  `bg_dungeon.png`; the field is where overworld encounters happen and is now
+  its own slot.
+- **`SpriteSheet.gd` was in neither `STRUCTURE.md` nor `INTEGRATION_SEAMS.md`**
+  — the only `core/` file with no entry anywhere. Both now cover it, including
+  the quick-reference table. `hero.tscn` and `damage_number.tscn` added to the
+  scenes listing.
+
+All thirteen `core/` files now appear in both docs — verified by script, not
+by eye.
+
+### Also logged
+- **`scenes/Main Menu.tscn` resurrected a third time** and was briefly pushed
+  in `54ec13a` before removal in `2b42d47`. **Cause found:** a Godot editor
+  session left open since before the `docs/spec-reconciliation` merge still
+  listed the pre-move path in `.godot/editor/editor_layout.cfg`, and rewrote
+  the file with a fresh uid whenever it synced. Closing the editor was not
+  enough — the stale `open_scenes` entry had to be cleared, or a restart would
+  restore the tab and recreate the file. Fixed at the source.
+
+---
+
 ## 2026-08-27 — hero art
 
 ### Added
@@ -522,14 +559,6 @@ Things the code is waiting on. Each one blocks work that is otherwise ready.
 
 Real, understood, and not yet worth fixing — but don't be surprised by them.
 
-- **Nothing instantiates `BattleState` or calls `Transitions`.** Both are
-  complete and unreachable. Running the project shows an empty battle layout.
-  This is the single biggest gap between what the docs describe and what the
-  game does.
-- **`hero_panel.tscn` shows STA as a depleting bar** (`0/0`, like HP), but STA
-  is a static stat that only sets `max_actions`. The thing that depletes is
-  `ActionBudget.remaining`. Either relabel the bar `ACTIONS`, or document
-  stamina as a spendable resource.
 - **Action button text has three sources.** `Actions.LABEL` says
   `Attack/Spell/Item/Guard`, `hero_panel.tscn` says `FIGHT/SPELL/ITEMS/GUARD`,
   and `NAMING.md` names the art `ui_btn_attack/spell/item/guard.png`.
@@ -538,9 +567,9 @@ Real, understood, and not yet worth fixing — but don't be surprised by them.
   uses either element.
 - **`skill_tree.gd`'s back button and `map.gd`'s dungeon entrance are never
   connected.** There is no way to leave the skill tree, and no way to enter
-  the dungeon.
-- **`battle.tscn` contains `TargetPicker`, `TurnIndicator` and
-  `DamageNumbers`** that no script references yet.
-- The battle reference shows one shared action menu and a global burst gauge;
-  the build uses per-hero menus and a per-hero ult bar (matching
-  `COMBAT_DATA.md`).
+  the dungeon. A finished battle also has nowhere to pop back to.
+- **`TurnIndicator` is still an empty node no script references.** The turn cue
+  is the step-forward instead, so it may simply not be needed.
+- The battle reference shows a **global** burst gauge; the build has a per-hero
+  ult bar, matching `COMBAT_DATA.md`. The action menu now matches the
+  reference (one shared menu).

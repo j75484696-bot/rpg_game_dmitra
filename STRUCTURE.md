@@ -22,13 +22,15 @@ res://
 │   ├── Character.gd          class_name — one hero's data + progression
 │   ├── CreatureRating.gd     class_name — one enemy's identity, as ratings
 │   ├── ActionBudget.gd       class_name — one combatant's actions, one turn
-│   └── BattleState.gd        class_name — one fight, start to finish
+│   ├── BattleState.gd        class_name — one fight, start to finish
+│   └── SpriteSheet.gd        class_name — slices a strip into SpriteFrames
 ├── data/                     Authored game data (.tres)
 │   ├── heroes/               ignis, aria, zeph, craig — Character instances
 │   └── enemies/              7 CreatureRating instances (6 + boss)
 ├── scenes/                   Gameplay scenes
 │   ├── map/                  overworld traversal
-│   └── battle/               the fight screen + enemy.tscn
+│   └── battle/               the fight screen: battle, hero, enemy,
+│                              damage_number
 ├── ui/                       UI scenes and themes
 │   ├── hud/                  In-battle overlays (hero_panel.tscn)
 │   ├── menus/                Full-screen screens

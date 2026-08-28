@@ -142,6 +142,42 @@ boss_ashfang_atk_02.png
 
 ---
 
+## 🎞️ Sprite sheets (how animation is actually delivered)
+
+Art arrives as **one horizontal strip per animation**, not as individual frame
+files. `core/SpriteSheet.gd` slices it at load.
+
+```
+<prefix>_<slug>_bidle.png        one row, no padding, square cells
+```
+
+| Rule | Value |
+|---|---|
+| Layout | a **single row**, left to right |
+| Cell | **square** — 64×64 today |
+| Padding / margin | **none**, cells touch |
+| Frame count | **free** — inferred from image width ÷ cell |
+| Pivot | bottom-centre, character standing on the bottom edge |
+| Playback | 12 fps, looping |
+
+**Frame counts do not have to match between creatures.** 8- and 16-frame strips
+run side by side; nothing is configured per file.
+
+**The filename is the entire wiring.** Drop the file in the right folder with
+the right name and it appears in game — no scene edit, no code change. The
+lookup lowercases the display name and replaces spaces with underscores:
+
+```
+"Frostbite Imp"  ->  enemy_frostbite_imp_bidle.png
+"Ashfang"        ->  boss_ashfang_bidle.png       (enemy_ is tried first, then boss_)
+"Ignis"          ->  hero_ignis_bidle.png
+```
+
+A creature with no strip shows a flat placeholder block instead, so art can
+land one file at a time without ever breaking the build.
+
+---
+
 ## 😤 Battle IDLE animations (heroes + enemies)
 
 Plays constantly during combat so nobody stands frozen — a subtle breathe/sway loop. Front-facing, no direction.
@@ -266,7 +302,8 @@ sprite per element.
 - **`prop_tree.png`**, **`prop_bush.png`**
 - **`ui_dungeon_marker.png`** (the map entrance icon)
 - **`ui_shop_marker.png`** (the shop's spot on the overworld)
-- **`bg_dungeon.png`** (single static battle background)
+- **`bg_field.png`** (overworld encounter background — grass and treeline)
+- **`bg_dungeon.png`** (dungeon battle background)
 - `bg_menu.png`, `bg_victory.png`, `bg_defeat.png`
 
 ### UI · Icons · VFX (Designer 3)

@@ -53,10 +53,21 @@ final stat = level-1 base + growth x (level - 1) + spent points x PER_POINT
 
 | Slot | Threat | Hero | Why |
 |---|---|---|---|
-| Front | 50 | **Craig** | Wall — highest DEF+HP, draws aggro, guards |
+| Front | 50 | **Ignis** | ⚠️ TEMPORARY — see below |
 | Center | 30 | **Zeph** | Fast melee |
 | Back 1 | 10 | **Aria** | Water caster, stays safe |
-| **Back 2 — the bench** | **0** | **Ignis** | Substitute by default. Swap him in when Fire helps |
+| **Back 2 — the bench** | **0** | **Craig** | ⚠️ TEMPORARY — see below |
+
+> ⚠️ **Front and bench are currently swapped from the intended design.** Craig
+> belongs at Front — wall, highest DEF+HP, draws aggro, guards — with Ignis
+> benched as the substitute. Ignis was moved in on 2026-08-27 only because
+> Craig has no sprite yet and the art needed viewing.
+>
+> **This is a balance change, not a cosmetic one.** Front draws the highest
+> threat in the game while Ignis is the glass cannon (100 HP, 16 DEF vs
+> Craig's 120/32), so he takes the most hits while least able to survive them.
+> Revert `ignis.tres` to `position = 3` and `craig.tres` to `position = 0`
+> before any playtest that judges balance.
 
 `BACK2` is the **bench**, not a fourth combat slot. A benched hero generates
 zero threat and is never built into a fight, so exactly three heroes are

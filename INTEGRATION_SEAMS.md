@@ -467,6 +467,40 @@ The payload is stacked alongside its scene, so popping restores the payload unde
 
 ---
 
+## 🎞️ SpriteSheet (class) — art loading
+
+Turns a horizontal strip into `SpriteFrames` at load. Scene code calls this;
+nothing else needs to know how art is stored.
+
+### `SpriteSheet.find_idle(display_name: String, prefixes: Array = ["enemy", "boss"]) -> Texture2D`
+- **Returns:** the idle strip for a creature of that name, or `null` if no art
+  exists for it yet. Callers show a placeholder on `null` rather than erroring.
+- **Why prefixes:** `NAMING.md` files bosses under `boss_` and everything else
+  under `enemy_`, but a fight only has a *name* — it does not know which kind
+  of creature it is holding. Pass `["hero"]` for party members.
+- **Example:**
+  ```gdscript
+  var tex := SpriteSheet.find_idle("Frostbite Imp")   # enemy_frostbite_imp_bidle.png
+  ```
+
+### `SpriteSheet.strip_auto(texture: Texture2D, cell: int = 64, fps: float = 12.0) -> SpriteFrames`
+- **Returns:** a looping `SpriteFrames` named `bidle`, with the frame count
+  **inferred from the texture width**. An 8-frame and a 16-frame strip both
+  work with no per-file configuration.
+- **Example:**
+  ```gdscript
+  $Sprite.sprite_frames = SpriteSheet.strip_auto(tex)
+  $Sprite.play(SpriteSheet.ANIM)
+  ```
+
+### Also available
+- `SpriteSheet.strip(texture, cell, count, fps)` — when the count must be
+  forced rather than inferred.
+- `SpriteSheet.slugify(display_name)` — `"BOSS: Ashfang"` → `"ashfang"`.
+- `SpriteSheet.ANIM` — the animation name, `&"bidle"`.
+
+---
+
 ## 📏 Quick reference
 
 | Call | Returns |
@@ -497,3 +531,5 @@ The payload is stacked alongside its scene, so popping restores the payload unde
 | `battle.setup/begin/act/end_turn(...)` | see above |
 | `Transitions.push(path, payload)` / `pop()` / `replace(path, payload)` | `void` (await) |
 | `Transitions.payload()` | `Dictionary` |
+| `SpriteSheet.find_idle(name, prefixes)` | `Texture2D` or `null` |
+| `SpriteSheet.strip_auto(tex, cell, fps)` | `SpriteFrames` |
