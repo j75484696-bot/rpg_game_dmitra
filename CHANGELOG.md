@@ -711,6 +711,7 @@ Things the code is waiting on. Each one blocks work that is otherwise ready.
 | Shop stock, prices, sell rate | Shop screen can't be built | Team |
 | Starting gold, potion count, and which four starter items | `Inventory.STARTING_*` are placeholders | Team |
 | Where does gold come from? | No enemy has a gold value | Team |
+| **How many enemies per fight — encounters AND dungeon?** | Undecided for both. The code takes a variable list either way, so nothing is blocked — but XP pacing assumes one enemy per dungeon fight (15+25+30 = the doc's "~70"), and "8–12 XP each" pays triple for a group of three | Team |
 | Does a fight run with fewer than three heroes? | `BattleState.setup()` will happily build two. Unclear whether that's intended or should end the run | Coder A |
 | Is "all heroes permanently out" a wipe? | Different condition from "all at 0 HP this fight", which is all `_party_wiped()` knows | Coder A |
 | `wind_2` / `earth_2` don't exist | `refresh_spells()` generates them at level 3, which is reachable in the demo | Team |

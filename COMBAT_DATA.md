@@ -267,6 +267,12 @@ reset on entering a dungeon. They're per-run state, so they don't live on
 **A dungeon run:** enter → three normal fights in order, with a prep menu
 between each → Ashfang → clear.
 
+> ⚠️ **Group size is undecided** — for dungeon fights and map encounters alike.
+> "Three normal fights" fixes the number of *fights*, not how many enemies
+> stand in each. The code takes a variable list either way, so nothing is
+> blocked; but the XP figures below assume one enemy per dungeon fight, and
+> "8–12 XP each" pays triple for a group of three.
+
 **XP is awarded the moment an enemy dies**, not on clear, so heroes can level
 mid-dungeon. That's why the prep menu needs a spend-your-point screen.
 
