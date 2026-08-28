@@ -7,6 +7,26 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — Mudling art
+
+### Added
+- **`enemy_mudling_bidle.png`** — 512×64, 8 frames. Dropped in with **no code
+  or scene change**, which is the naming convention paying off. 8- and
+  16-frame sheets coexist because `strip_auto()` reads the count from texture
+  width.
+
+All four dungeon enemies now animate:
+
+    Mudling           8 frames      Ashfang    16 frames
+    Frostbite Imp    16 frames      Wisp        8 frames
+    Emberhound       16 frames
+
+### Still placeholder
+- **Critter** and **Brute** — the two remaining encounter enemies.
+- All four heroes.
+
+---
+
 ## 2026-08-27 — battle background
 
 ### Added
