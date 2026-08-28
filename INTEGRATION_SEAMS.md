@@ -1,4 +1,4 @@
-# 🔌 Integration Seams — The Public API
+`Combat.melee/spell/item/ultimate/heal/ult_gain(...)` | `int` |# 🔌 Integration Seams — The Public API
 
 **What this is:** every function, signal and field the rest of the game can call on the shared systems in `core/`. If you need to know how two halves of the project connect, this is the file.
 
@@ -294,7 +294,9 @@ var restored := Combat.heal(60, hero["hp"], hero["max_hp"])
 ## 🎬 Actions (autoload) + ActionBudget (class)
 
 ### `Actions.TYPE`
-`MELEE`, `SPELL`, `ITEM`, `GUARD`. **All cost 1** (`Actions.COST`). Split them apart if a spell should ever cost two.
+`MELEE`, `SPELL`, `ITEM`, `GUARD`, `ULT`. **All cost 1** (`Actions.COST`). Split them apart if a spell should ever cost two.
+
+`ULT` costs an action **and** a full meter — the meter is the gate, but a free ult would mean ulting *and* attacking on the same turn. `BattleState` calls `char.spend_ult()`, which gates and spends in one call, and refunds the action if the meter was not full.
 
 ### Action counts
 | Call | Returns |

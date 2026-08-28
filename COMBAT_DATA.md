@@ -46,6 +46,12 @@ final stat = level-1 base + growth x (level - 1) + spent points x PER_POINT
 - **Max actions/turn** = `2 + int(STA / 30)` → Ignis 2, Aria 3, Zeph 3, Craig 3.
 - **Ult meter** fills 0→100: `+1 per 2 damage dealt`, `+1 per 4 damage taken`.
   Starting values, tuned in playtest.
+- **The ultimate** costs **one action** and a **full meter**, and deals
+  `ATT × 2.5` through the normal damage path — DEF is subtracted, the element
+  matchup applies. `Combat.ultimate()`. **Firing it does not charge the meter**
+  from its own damage, or a big ult refunds a third of its own bar.
+  ⚠️ Placeholder: the multiplier is a starting value and the effect is a plain
+  single-target hit. No animation, no special behaviour per hero.
 
 ### Combat positions
 

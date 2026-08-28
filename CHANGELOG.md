@@ -7,6 +7,46 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-28 — the ultimate is usable
+
+### Added
+- **`Actions.TYPE.ULT`** — a fifth action type, cost 1 like the rest.
+- **`Combat.ultimate()`** — the placeholder effect: `ATT × 2.5` through the
+  normal damage path, so DEF and the element matchup still apply and no new
+  rules enter the game. `COMBAT_DATA.md` asked for a "placeholder ult" and
+  never said what it does; this is the simplest thing that reads as heavy.
+- **An ULTIMATE button** in the shared action menu. Disabled until charged, and
+  labelled with the current percentage while it fills — `ULTIMATE (64%)` — so
+  the gate is visible rather than a dead button.
+
+### Fixed
+- **The ultimate recharged itself.** `act()` charges the meter from damage
+  dealt, and the ult deals ~70, so firing it immediately refunded 35% of the
+  bar it had just spent. `ULT` is now excluded from ult gain. Caught by
+  probing the meter after firing, not by reading the code.
+
+### Design decisions
+- **The ult costs an action as well as the meter.** A free ult would mean
+  ulting *and* attacking on the same turn.
+- **`spend_ult()` is the gate and the spend in one call** — it returns `false`
+  and changes nothing unless the meter is full, so `BattleState` fires and
+  checks in one step, refunding the action on failure. A mis-click costs
+  nothing.
+
+Verified in-engine:
+
+    empty meter   -> act() returns false, 3 actions still unspent
+    charged       -> button enabled, reads "ULTIMATE"
+    fired         -> 70 damage where a normal hit did 19; meter 100 -> 0
+    normal hit    -> meter charges again
+
+### Docs updated
+`COMBAT_DATA.md` (ult rules + placeholder warning), `INTEGRATION_SEAMS.md`
+(`ULT` in `Actions.TYPE`, `Combat.ultimate()`, quick reference), `NAMING.md`
+(`ui_btn_ult.png`).
+
+---
+
 ## 2026-08-28 — ultimate meter
 
 ### Added

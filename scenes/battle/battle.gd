@@ -61,6 +61,7 @@ const BAR_DRAIN_TIME := 0.25
 @onready var action_menu: PanelContainer = $Hud/ActionMenu
 @onready var actor_label: Label = $Hud/ActionMenu/Margin/Rows/ActorLabel
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
+@onready var ult_button: Button = $Hud/ActionMenu/Margin/Rows/UltButton
 @onready var end_turn_button: Button = $Hud/ActionMenu/Margin/Rows/EndTurnButton
 @onready var damage_layer: Control = $Hud/DamageNumbers
 @onready var background: TextureRect = $BackgroundLayer/Background
@@ -90,6 +91,7 @@ func _ready() -> void:
 		Actions.TYPE.SPELL: buttons.get_node("SpellButton"),
 		Actions.TYPE.ITEM: buttons.get_node("ItemButton"),
 		Actions.TYPE.GUARD: buttons.get_node("GuardButton"),
+		Actions.TYPE.ULT: ult_button,
 	}
 	for type in action_buttons:
 		action_buttons[type].pressed.connect(_on_action_pressed.bind(type))
@@ -296,6 +298,12 @@ func _refresh_action_menu() -> void:
 	# stamina system, so it is driven by the same call that would spend.
 	for type in action_buttons:
 		action_buttons[type].disabled = not budget.can_spend(type)
+
+	# The ult needs a full meter on TOP of a spare action, so it cannot ride the
+	# plain can_spend() check. Label it with the charge so the gate is visible.
+	var charged: bool = actor.has("source") and actor["source"].is_ult_ready()
+	ult_button.disabled = ult_button.disabled or not charged
+	ult_button.text = "ULTIMATE" if charged else "ULTIMATE (%d%%)" % int(actor["source"].ult_meter if actor.has("source") else 0)
 
 func _on_action_pressed(type: int) -> void:
 	var t: Dictionary = battle.current()

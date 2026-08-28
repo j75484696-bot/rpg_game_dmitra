@@ -210,9 +210,19 @@ func act(type: int, target_index: int) -> bool:
 				actor["budget"].refund(type)
 				return false
 			Actions.declare_guard(guards, t["index"], target_index)
+		Actions.TYPE.ULT:
+			# spend_ult() is the gate AND the spend in one call: it returns
+			# false and changes nothing unless the meter is full. Refund the
+			# action so a mis-click costs nothing.
+			if not actor.has("source") or not actor["source"].spend_ult():
+				actor["budget"].refund(type)
+				return false
+			amount = _damage_enemy(actor, target_index, true)
 
 	# Ult charges on damage DEALT. Character owns the clamp, Combat the rates.
-	if amount > 0 and actor.has("source"):
+	# The ultimate itself is excluded: it hits hard enough that charging from
+	# its own damage refunds a third of the bar the instant it is spent.
+	if amount > 0 and type != Actions.TYPE.ULT and actor.has("source"):
 		actor["source"].gain_ult(amount, 0)
 
 	action_taken.emit(t["index"], true, type, target_index, amount)
@@ -245,13 +255,13 @@ func _run_enemy_turn(enemy_index: int) -> void:
 
 # --- Damage --------------------------------------------------------------
 
-func _damage_enemy(actor: Dictionary, target_index: int) -> int:
+func _damage_enemy(actor: Dictionary, target_index: int, is_ult: bool = false) -> int:
 	if target_index < 0 or target_index >= enemies.size():
 		return 0
 	var target: Dictionary = enemies[target_index]
 	if not target["alive"]:
 		return 0
-	var dealt: int = Combat.melee(actor, target)
+	var dealt: int = Combat.ultimate(actor, target) if is_ult else Combat.melee(actor, target)
 	_apply_damage(target, dealt, target_index, false)
 	return dealt
 

@@ -308,7 +308,7 @@ sprite per element.
 
 ### UI · Icons · VFX (Designer 3)
 - **`ui_hpbar.png`**, **`ui_stamina.png`**, **`ui_ultmeter.png`**, **`ui_panel.png`**
-- **`ui_btn_attack.png`**, **`ui_btn_spell.png`**, **`ui_btn_item.png`**, **`ui_btn_guard.png`**
+- **`ui_btn_attack.png`**, **`ui_btn_spell.png`**, **`ui_btn_item.png`**, **`ui_btn_guard.png`**, **`ui_btn_ult.png`**
 - **`icon_spell_<element>_<n>.png`** ×6
 - **`icon_skill_1.png`** … `icon_skill_5.png`
 - **`icon_item_potion.png`**, **`icon_item_molotov.png`**, **`icon_item_bomb.png`**, **`icon_item_grenade.png`**

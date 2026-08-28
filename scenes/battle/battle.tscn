@@ -121,6 +121,9 @@ text = "GUARD"
 custom_minimum_size = Vector2(180, 30)
 text = "SPELL"
 
+[node name="UltButton" type="Button" parent="Hud/ActionMenu/Margin/Rows"]
+text = "ULTIMATE"
+
 [node name="EndTurnButton" type="Button" parent="Hud/ActionMenu/Margin/Rows"]
 text = "End turn"
 
