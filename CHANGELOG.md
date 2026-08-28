@@ -7,6 +7,36 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — first art
+
+### Added
+- **`core/SpriteSheet.gd`** — slices a horizontal strip into `SpriteFrames` at
+  runtime. `find_idle()` locates a creature's art **by name**, so dropping
+  `assets/sprites/characters/enemy_mudling_bidle.png` into the project is all
+  it takes to animate Mudling. No scene editing, no code change, no hand-built
+  AtlasTextures. `strip_auto()` infers the frame count from the texture width,
+  so a strip can be re-exported with more frames without touching anything.
+- **First real art: `enemy_wisp_bidle.png`** — 512×64, 8 frames at 12fps,
+  looping. Verified playing in-engine.
+
+### Changed
+- **`textures/canvas_textures/default_texture_filter=0` (Nearest).** Godot
+  defaults to linear filtering, which blurs pixel art into mush. This had to be
+  set before any sprite landed.
+- `hero.tscn` / `enemy.tscn` carry an empty `AnimatedSprite2D` plus a
+  `Placeholder` ColorRect. Art hides the placeholder; creatures without art keep
+  their block. Real and placeholder combatants coexist in the same fight, so art
+  can arrive one file at a time.
+
+### Convention set
+`NAMING.md` specs individual frame files and says nothing about sheets. Strips
+follow the same pattern minus the frame number:
+
+    assets/sprites/characters/<prefix>_<slug>_bidle.png     one row, no padding
+    enemy_frostbite_imp_bidle.png                           spaces -> underscores
+
+---
+
 ## 2026-08-27
 
 ### Added

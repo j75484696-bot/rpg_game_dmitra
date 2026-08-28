@@ -132,6 +132,7 @@ func _build_hero_nodes() -> void:
 		var node := HERO_SCENE.instantiate()
 		hero_slots[i].add_child(node)
 		node.get_node("NameLabel").text = str(battle.heroes[i]["name"])
+		_dress(node, str(battle.heroes[i]["name"]), "hero")
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, true))
 		hero_nodes.append(node)
 
@@ -147,9 +148,23 @@ func _build_enemy_nodes() -> void:
 		var bar: ProgressBar = node.get_node("HpBar")
 		bar.max_value = int(e.get("max_hp", 1))
 		bar.value = int(e.get("hp", bar.max_value))
+		_dress(node, str(e.get("name", "")), "enemy")
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
 		enemy_nodes.append(node)
 		enemy_home.append(node.position.x)
+
+# Give a combatant its idle animation if art exists for it, otherwise leave the
+# placeholder block showing. Art is found by name, so dropping
+# assets/sprites/characters/enemy_mudling_bidle.png into the project is all it
+# takes to replace that block — no scene editing, no code change.
+func _dress(node: Node2D, display_name: String, prefix: String) -> void:
+	var texture := SpriteSheet.find_idle(display_name, prefix)
+	if texture == null:
+		return
+	var sprite: AnimatedSprite2D = node.get_node("Sprite")
+	sprite.sprite_frames = SpriteSheet.strip_auto(texture)
+	sprite.play(SpriteSheet.ANIM)
+	node.get_node("Placeholder").visible = false
 
 # --- Display --------------------------------------------------------------
 
