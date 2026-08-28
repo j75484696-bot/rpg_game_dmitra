@@ -1,43 +1,46 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://djd2e4cehjs0k"]
 
-[ext_resource type="Script" path="res://scenes/battle/battle.gd" id="1"]
+[ext_resource type="Script" uid="uid://8751vxovttrl" path="res://scenes/battle/battle.gd" id="1"]
 [ext_resource type="PackedScene" path="res://ui/hud/hero_panel.tscn" id="2"]
 
-[node name="Battle" type="Node2D"]
+[node name="Battle" type="Node2D" unique_id=130439267]
 script = ExtResource("1")
 
-[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=560391516]
 layer = -1
 
-[node name="Background" type="TextureRect" parent="BackgroundLayer"]
+[node name="Background" type="TextureRect" parent="BackgroundLayer" unique_id=974694796]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Heroes" type="Node2D" parent="."]
+[node name="Heroes" type="Node2D" parent="." unique_id=508120583]
 
-[node name="FrontSlot" type="Node2D" parent="Heroes"]
+[node name="FrontSlot" type="Node2D" parent="Heroes" unique_id=855746440]
 position = Vector2(360, 600)
 
-[node name="CenterSlot" type="Node2D" parent="Heroes"]
+[node name="CenterSlot" type="Node2D" parent="Heroes" unique_id=662309013]
 position = Vector2(250, 540)
 
-[node name="Back1Slot" type="Node2D" parent="Heroes"]
+[node name="Back1Slot" type="Node2D" parent="Heroes" unique_id=176681200]
 position = Vector2(140, 486)
 
-[node name="Enemies" type="Node2D" parent="."]
+[node name="Enemies" type="Node2D" parent="." unique_id=167015877]
 
-[node name="Vfx" type="Node2D" parent="."]
+[node name="Vfx" type="Node2D" parent="." unique_id=1884059642]
 
-[node name="Bgm" type="AudioStreamPlayer" parent="."]
+[node name="Bgm" type="AudioStreamPlayer" parent="." unique_id=438105655]
 
-[node name="Sfx" type="AudioStreamPlayer" parent="."]
+[node name="Sfx" type="AudioStreamPlayer" parent="." unique_id=2133346980]
 
-[node name="Hud" type="CanvasLayer" parent="."]
+[node name="Hud" type="CanvasLayer" parent="." unique_id=2029284984]
 
-[node name="HeroPanels" type="HBoxContainer" parent="Hud"]
+[node name="HeroPanels" type="HBoxContainer" parent="Hud" unique_id=1009096457]
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 8.0
@@ -46,13 +49,16 @@ offset_right = -8.0
 offset_bottom = 110.0
 theme_override_constants/separation = 8
 
-[node name="FrontPanel" parent="Hud/HeroPanels" instance=ExtResource("2")]
+[node name="FrontPanel" parent="Hud/HeroPanels" unique_id=1261991808 instance=ExtResource("2")]
+layout_mode = 2
 
-[node name="CenterPanel" parent="Hud/HeroPanels" instance=ExtResource("2")]
+[node name="CenterPanel" parent="Hud/HeroPanels" unique_id=373082476 instance=ExtResource("2")]
+layout_mode = 2
 
-[node name="Back1Panel" parent="Hud/HeroPanels" instance=ExtResource("2")]
+[node name="Back1Panel" parent="Hud/HeroPanels" unique_id=949214569 instance=ExtResource("2")]
+layout_mode = 2
 
-[node name="EnemyPanel" type="PanelContainer" parent="Hud"]
+[node name="EnemyPanel" type="PanelContainer" parent="Hud" unique_id=1198580604]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -61,15 +67,18 @@ offset_top = 120.0
 offset_right = -12.0
 offset_bottom = 190.0
 
-[node name="Rows" type="VBoxContainer" parent="Hud/EnemyPanel"]
+[node name="Rows" type="VBoxContainer" parent="Hud/EnemyPanel" unique_id=1718144929]
+layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="Hud/EnemyPanel/Rows"]
+[node name="NameLabel" type="Label" parent="Hud/EnemyPanel/Rows" unique_id=388343257]
+layout_mode = 2
 text = "—"
 
-[node name="HpBar" type="ProgressBar" parent="Hud/EnemyPanel/Rows"]
+[node name="HpBar" type="ProgressBar" parent="Hud/EnemyPanel/Rows" unique_id=1389507289]
+layout_mode = 2
 show_percentage = false
 
-[node name="MessageLog" type="PanelContainer" parent="Hud"]
+[node name="MessageLog" type="PanelContainer" parent="Hud" unique_id=1099797573]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -78,57 +87,74 @@ offset_top = -120.0
 offset_right = 620.0
 offset_bottom = -12.0
 
-[node name="Text" type="RichTextLabel" parent="Hud/MessageLog"]
+[node name="Text" type="RichTextLabel" parent="Hud/MessageLog" unique_id=1089350152]
+layout_mode = 2
 
-[node name="ActionMenu" type="PanelContainer" parent="Hud"]
+[node name="ActionMenu" type="PanelContainer" parent="Hud" unique_id=2137265553]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -400.0
-offset_top = -120.0
-offset_right = -12.0
+offset_top = -187.0
+offset_right = -20.0
 offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
 
-[node name="Margin" type="MarginContainer" parent="Hud/ActionMenu"]
+[node name="Margin" type="MarginContainer" parent="Hud/ActionMenu" unique_id=1377000915]
+layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 6
 
-[node name="Rows" type="VBoxContainer" parent="Hud/ActionMenu/Margin"]
+[node name="Rows" type="VBoxContainer" parent="Hud/ActionMenu/Margin" unique_id=1122549461]
+layout_mode = 2
 
-[node name="ActorLabel" type="Label" parent="Hud/ActionMenu/Margin/Rows"]
+[node name="ActorLabel" type="Label" parent="Hud/ActionMenu/Margin/Rows" unique_id=387662180]
+layout_mode = 2
 text = "—"
 
-[node name="Buttons" type="GridContainer" parent="Hud/ActionMenu/Margin/Rows"]
+[node name="Buttons" type="GridContainer" parent="Hud/ActionMenu/Margin/Rows" unique_id=1918031206]
+layout_mode = 2
 columns = 2
 
-[node name="AttackButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons"]
+[node name="AttackButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=1440624732]
 custom_minimum_size = Vector2(180, 30)
+layout_mode = 2
 text = "FIGHT"
 
-[node name="ItemButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons"]
+[node name="ItemButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=693765258]
 custom_minimum_size = Vector2(180, 30)
+layout_mode = 2
 text = "ITEMS"
 
-[node name="GuardButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons"]
+[node name="GuardButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=2090288194]
 custom_minimum_size = Vector2(180, 30)
+layout_mode = 2
 text = "GUARD"
 
-[node name="SpellButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons"]
+[node name="SpellButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=702783021]
 custom_minimum_size = Vector2(180, 30)
+layout_mode = 2
 text = "SPELL"
 
-[node name="UltButton" type="Button" parent="Hud/ActionMenu/Margin/Rows"]
+[node name="UltButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=39817754]
+layout_mode = 2
 text = "ULTIMATE"
 
-[node name="EndTurnButton" type="Button" parent="Hud/ActionMenu/Margin/Rows"]
+[node name="EndTurnButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=342295075]
+layout_mode = 2
 text = "End turn"
 
-[node name="TurnIndicator" type="Control" parent="Hud"]
+[node name="TurnIndicator" type="Control" parent="Hud" unique_id=56134735]
+layout_mode = 3
+anchors_preset = 0
 mouse_filter = 2
 
-[node name="DamageNumbers" type="Control" parent="Hud"]
+[node name="DamageNumbers" type="Control" parent="Hud" unique_id=2133249797]
+layout_mode = 3
+anchors_preset = 0
 mouse_filter = 2
