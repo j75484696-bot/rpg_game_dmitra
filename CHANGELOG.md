@@ -7,6 +7,33 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-28 — bars drain
+
+### Changed
+- **HP and action bars slide to their new value** over 0.25s instead of
+  snapping. A 40-damage hit that teleports the bar reads as a glitch; the same
+  hit draining reads as a hit. Eased out, so it moves fast then settles.
+- Every bar now goes through `_set_bar()`, which **kills any tween already
+  running on that bar** first. Two hits landing inside the drain window would
+  otherwise leave two tweens fighting over one property, and the bar would
+  settle on whichever finished last rather than on the real HP.
+- The initial fill passes `animate = false` — bars should start correct, not
+  animate up from zero.
+
+Verified by timing an actual hit: full at 70, still 70 the instant the blow
+lands, 56.4 mid-drain, settling exactly on the real HP of 51.
+
+### Still not wired
+- **The Ult bar.** The node exists in all three hero panels and is never
+  updated, because `Character` has no `ult_meter` field — `ult_meter`,
+  `is_ult_ready()`, `spend_ult()` and `gain_ult()` are all agreed in
+  `INTEGRATION_SEAMS.md` and none are built. `Combat.ult_gain()` computes the
+  number; nothing stores it.
+- **The enemy panel's HP bar** (top-right). It has no target-tracking to drive
+  it — the per-enemy bars above each sprite are the live ones.
+
+---
+
 ## 2026-08-28 — UI font
 
 ### Added

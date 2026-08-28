@@ -39,6 +39,10 @@ const STEP_FORWARD := 70.0
 const STEP_BACK := -18.0
 const STEP_TIME := 0.18
 
+# Bars slide to their new value rather than snapping. A 40-damage hit that
+# teleports the bar reads as a glitch; the same hit draining reads as a hit.
+const BAR_DRAIN_TIME := 0.25
+
 @onready var hero_slots: Array = [
 	$Heroes/FrontSlot,
 	$Heroes/CenterSlot,
@@ -105,7 +109,7 @@ func _start_fight() -> void:
 	battle.setup(_active_heroes(), _enemy_dicts())
 	_build_hero_nodes()
 	_build_enemy_nodes()
-	_refresh_panels()
+	_refresh_panels(false)   # first fill is just correct, it does not animate up
 	battle.begin()
 
 # The pusher can name a background; otherwise the field. Missing art leaves the
@@ -182,7 +186,7 @@ func _dress(node: Node2D, display_name: String, prefixes: Array) -> void:
 
 # --- Display --------------------------------------------------------------
 
-func _refresh_panels() -> void:
+func _refresh_panels(animate: bool = true) -> void:
 	for i in hero_panels.size():
 		var panel: Control = hero_panels[i]
 		if i >= battle.heroes.size():
@@ -194,24 +198,24 @@ func _refresh_panels() -> void:
 
 		var hp_bar: ProgressBar = rows.get_node("HpRow/HpBar")
 		hp_bar.max_value = int(h["max_hp"])
-		hp_bar.value = int(h["hp"])
+		_set_bar(hp_bar, int(h["hp"]), animate)
 		rows.get_node("HpRow/HpValue").text = "%d/%d" % [int(h["hp"]), int(h["max_hp"])]
 
 		# The action bar is the live budget, not a stat - it drains as you act.
 		var budget: ActionBudget = h["budget"]
 		var act_bar: ProgressBar = rows.get_node("StaminaRow/StaminaBar")
 		act_bar.max_value = max(1, budget.max_actions)
-		act_bar.value = budget.remaining
+		_set_bar(act_bar, budget.remaining, animate)
 		rows.get_node("StaminaRow/StaminaValue").text = "%d/%d" % [budget.remaining, budget.max_actions]
 
 		# Dimmed rather than hidden, so the player still sees who fell.
 		panel.modulate = Color.WHITE if h["alive"] else Color(0.45, 0.45, 0.45)
 
-func _refresh_enemies() -> void:
+func _refresh_enemies(animate: bool = true) -> void:
 	for i in enemy_nodes.size():
 		var e: Dictionary = battle.enemies[i]
 		var node: Node2D = enemy_nodes[i]
-		node.get_node("HpBar").value = int(e["hp"])
+		_set_bar(node.get_node("HpBar"), int(e["hp"]), animate)
 		node.modulate = Color.WHITE if e["alive"] else Color(0.3, 0.3, 0.3, 0.5)
 
 func log_message(text: String) -> void:
@@ -241,6 +245,23 @@ func _reset_heroes() -> void:
 func _reset_enemies() -> void:
 	for i in enemy_nodes.size():
 		_slide(enemy_nodes[i], enemy_home[i])
+
+# Drive every bar through here. Two hits landing inside the drain window would
+# otherwise leave two tweens fighting over one property, and the bar settles on
+# whichever finishes last — so the previous one is killed first.
+# animate=false is for the initial fill, which should just be correct, not
+# animate up from zero.
+func _set_bar(bar: ProgressBar, value: float, animate: bool = true) -> void:
+	var running = bar.get_meta("drain", null)
+	if running != null and is_instance_valid(running):
+		running.kill()
+	if not animate:
+		bar.value = value
+		return
+	var tween := create_tween()
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(bar, "value", value, BAR_DRAIN_TIME)
+	bar.set_meta("drain", tween)
 
 func _slide(node: Node2D, to_x: float) -> void:
 	var tween := create_tween()
