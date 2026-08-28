@@ -16,12 +16,25 @@ const ANIM := &"bidle"
 # Where a creature's idle strip lives, by convention. Returns null if there is
 # no art for that name yet — callers fall back to a placeholder.
 #   "Frostbite Imp" -> res://assets/sprites/characters/enemy_frostbite_imp_bidle.png
-static func find_idle(display_name: String, prefix: String = "enemy") -> Texture2D:
-	var slug: String = display_name.to_lower().replace(" ", "_")
-	var path: String = "res://assets/sprites/characters/%s_%s_bidle.png" % [prefix, slug]
-	if not ResourceLoader.exists(path):
-		return null
-	return load(path) as Texture2D
+#
+# Several prefixes are tried in order because NAMING.md files bosses under
+# boss_ rather than enemy_, and the fight doesn't know which it is holding.
+# A name like "BOSS: Ashfang" strips down to "ashfang".
+static func find_idle(display_name: String, prefixes: Array = ["enemy", "boss"]) -> Texture2D:
+	var slug: String = slugify(display_name)
+	for prefix in prefixes:
+		var path: String = "res://assets/sprites/characters/%s_%s_bidle.png" % [prefix, slug]
+		if ResourceLoader.exists(path):
+			return load(path) as Texture2D
+	return null
+
+# "BOSS: Ashfang" -> "ashfang";  "Frostbite Imp" -> "frostbite_imp"
+static func slugify(display_name: String) -> String:
+	var s: String = display_name.to_lower()
+	var colon: int = s.rfind(":")
+	if colon != -1:
+		s = s.substr(colon + 1)
+	return s.strip_edges().replace(" ", "_")
 
 # Slice a single-row strip into a looping animation.
 # cell is the square cell size; count is how many frames the row holds.

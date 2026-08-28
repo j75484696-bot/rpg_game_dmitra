@@ -7,6 +7,32 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — dungeon enemy art
+
+### Added
+Three 1024×64 strips, 16 frames at 12fps (1.333s loop), mapped to the dungeon
+roster by appearance:
+
+| Sheet | Becomes | Why |
+|---|---|---|
+| `ice_beast_idle` | `enemy_frostbite_imp_bidle.png` | the only Ice enemy |
+| `fire_beast_idle` | `enemy_emberhound_bidle.png` | Fire, and a hound is a quadruped |
+| `red_knight_idle` | `boss_ashfang_bidle.png` | crimson and armoured — reads as the boss |
+
+All three verified playing in-engine at 16 frames.
+
+### Changed
+- **`SpriteSheet.find_idle()` now tries several prefixes**, `enemy_` then
+  `boss_`. `NAMING.md` files bosses under `boss_`, but the fight doesn't know
+  which kind of creature it is holding — it just has a name. Added `slugify()`
+  so a display name like `"BOSS: Ashfang"` still resolves to `ashfang`.
+
+### Still placeholder
+- **Mudling** — the only dungeon enemy without art. Earth, the weak warmup.
+- All four heroes.
+
+---
+
 ## 2026-08-27 — first art
 
 ### Added
