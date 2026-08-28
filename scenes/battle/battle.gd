@@ -12,6 +12,10 @@ const ENEMY_SCENE := preload("res://scenes/battle/enemy.tscn")
 const HERO_SCENE := preload("res://scenes/battle/hero.tscn")
 const DAMAGE_NUMBER := preload("res://scenes/battle/damage_number.tscn")
 
+# Where the fight happens. Overworld encounters use the field; a dungeon fight
+# passes its own via the payload, so this is a default and not a hardcode.
+const DEFAULT_BACKGROUND := "res://assets/sprites/backgrounds/bg_field.png"
+
 # Fallback fight when the scene is launched directly rather than pushed with a
 # payload - which is what main_scene does today, so F5 always shows something.
 const DEMO_ENEMIES := [
@@ -55,6 +59,7 @@ const STEP_TIME := 0.18
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
 @onready var end_turn_button: Button = $Hud/ActionMenu/Margin/Rows/EndTurnButton
 @onready var damage_layer: Control = $Hud/DamageNumbers
+@onready var background: TextureRect = $BackgroundLayer/Background
 @onready var vfx: Node2D = $Vfx
 
 var battle: BattleState
@@ -96,11 +101,20 @@ func _start_fight() -> void:
 	battle.combatant_died.connect(on_combatant_died)
 	battle.battle_ended.connect(on_battle_ended)
 
+	_set_background()
 	battle.setup(_active_heroes(), _enemy_dicts())
 	_build_hero_nodes()
 	_build_enemy_nodes()
 	_refresh_panels()
 	battle.begin()
+
+# The pusher can name a background; otherwise the field. Missing art leaves the
+# flat fill showing rather than erroring, so a bad path never breaks a fight.
+func _set_background() -> void:
+	var path: String = str(Transitions.payload().get("background", DEFAULT_BACKGROUND))
+	if not ResourceLoader.exists(path):
+		return
+	background.texture = load(path)
 
 # Only the three ACTIVE positions fight. The bench is skipped entirely.
 func _active_heroes() -> Array:
@@ -143,7 +157,7 @@ func _build_enemy_nodes() -> void:
 		var node := ENEMY_SCENE.instantiate()
 		enemies_root.add_child(node)
 		# Spread them down the right-hand side, mirroring the hero diagonal.
-		node.position = Vector2(880.0 - i * 90.0, 330.0 + i * 60.0)
+		node.position = Vector2(890.0 - i * 95.0, 486.0 + i * 57.0)
 		node.get_node("NameLabel").text = str(e.get("name", "ENEMY"))
 		var bar: ProgressBar = node.get_node("HpBar")
 		bar.max_value = int(e.get("max_hp", 1))

@@ -7,6 +7,30 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-27 — battle background
+
+### Added
+- **`assets/sprites/backgrounds/bg_field.png`** — 1774×887 outdoor field.
+  Filed as the *field* background, not `bg_dungeon`: it is grass and treeline,
+  and the game has overworld encounters as well as dungeon fights. `NAMING.md`
+  lists only `bg_dungeon.png`, so this is a new slot.
+
+### Changed
+- **The background is payload-driven.** `Transitions.push(..., {"background":
+  path})` sets it; the field is the default. A dungeon fight passes its own,
+  so nothing is hardcoded to one location. A missing path leaves the flat fill
+  rather than erroring.
+- Background moved into a `CanvasLayer` at `layer = -1` holding a `TextureRect`
+  with `KEEP_ASPECT_COVERED`. The art is 2:1 and the viewport is 16:9 — stretch
+  would squash the trees, so it covers and crops instead, and works at any
+  resolution the team eventually picks.
+- **Combatants repositioned onto the grass.** Slots were laid out against a
+  flat fill; against real art the back hero and both enemies stood in the
+  treeline, floating above the ground. The grass line lands near y=438 once
+  cover-scaled, so everyone now sits below it.
+
+---
+
 ## 2026-08-27 — dungeon enemy art
 
 ### Added
