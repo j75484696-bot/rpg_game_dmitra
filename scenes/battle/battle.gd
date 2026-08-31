@@ -12,10 +12,6 @@ const ENEMY_SCENE := preload("res://scenes/battle/enemy.tscn")
 const HERO_SCENE := preload("res://scenes/battle/hero.tscn")
 const DAMAGE_NUMBER := preload("res://scenes/battle/damage_number.tscn")
 
-# Where the fight happens. Overworld encounters use the field; a dungeon fight
-# passes its own via the payload, so this is a default and not a hardcode.
-const DEFAULT_BACKGROUND := "res://assets/sprites/backgrounds/bg_field.png"
-
 # Fallback fight when the scene is launched directly rather than pushed with a
 # payload - which is what main_scene does today, so F5 always shows something.
 const DEMO_ENEMIES := [
@@ -35,8 +31,8 @@ const ACTIVE_POSITIONS := [
 
 # How far the acting character steps toward the enemy, and how far everyone
 # else drifts away. This is the ONLY turn cue - there is no arrow or highlight.
-const STEP_FORWARD := 70.0
-const STEP_BACK := -18.0
+const STEP_FORWARD := 50.0
+const STEP_BACK := -40.0
 const STEP_TIME := 0.18
 
 @onready var hero_slots: Array = [
@@ -49,7 +45,12 @@ const STEP_TIME := 0.18
 	$Hud/HeroPanels/CenterPanel,
 	$Hud/HeroPanels/Back1Panel,
 ]
-@onready var enemies_root: Node2D = $Enemies
+@onready var enemy_slots: Array = [
+	$Enemies/Enemy1Slot,
+	$Enemies/Enemy2Slot,
+	$Enemies/Enemy3Slot,
+	$Enemies/Enemy4Slot,
+]
 @onready var enemy_panel: PanelContainer = $Hud/EnemyPanel
 @onready var enemy_name: Label = $Hud/EnemyPanel/Rows/NameLabel
 @onready var enemy_hp: ProgressBar = $Hud/EnemyPanel/Rows/HpBar
@@ -67,7 +68,7 @@ var hero_nodes: Array = []      # one per active hero, parented to its slot
 var enemy_nodes: Array = []     # one per enemy, index-aligned with battle.enemies
 var slot_home: Array = []       # each hero slot's resting x, to step back to
 var enemy_home: Array = []      # same for enemies - never offset from CURRENT
-                                # x, or the step accumulates every turn
+								# x, or the step accumulates every turn
 
 # Which action is waiting for a target, or -1 when nothing is pending.
 var pending_action: int = -1
@@ -108,11 +109,13 @@ func _start_fight() -> void:
 	_refresh_panels()
 	battle.begin()
 
-# The pusher can name a background; otherwise the field. Missing art leaves the
-# flat fill showing rather than erroring, so a bad path never breaks a fight.
+# The pusher can name a background; otherwise leave whatever's already set on
+# the scene (its own default, editable in the editor). Missing art leaves the
+# current texture showing rather than erroring, so a bad path never breaks a
+# fight.
 func _set_background() -> void:
-	var path: String = str(Transitions.payload().get("background", DEFAULT_BACKGROUND))
-	if not ResourceLoader.exists(path):
+	var path: String = str(Transitions.payload().get("background", ""))
+	if path.is_empty() or not ResourceLoader.exists(path):
 		return
 	background.texture = load(path)
 
@@ -151,13 +154,12 @@ func _build_hero_nodes() -> void:
 		hero_nodes.append(node)
 
 func _build_enemy_nodes() -> void:
-	var count: int = battle.enemies.size()
-	for i in count:
+	for i in battle.enemies.size():
+		if i >= enemy_slots.size():
+			break
 		var e: Dictionary = battle.enemies[i]
 		var node := ENEMY_SCENE.instantiate()
-		enemies_root.add_child(node)
-		# Spread them down the right-hand side, mirroring the hero diagonal.
-		node.position = Vector2(890.0 - i * 95.0, 486.0 + i * 57.0)
+		enemy_slots[i].add_child(node)
 		node.get_node("NameLabel").text = str(e.get("name", "ENEMY"))
 		var bar: ProgressBar = node.get_node("HpBar")
 		bar.max_value = int(e.get("max_hp", 1))
@@ -165,7 +167,7 @@ func _build_enemy_nodes() -> void:
 		_dress(node, str(e.get("name", "")), ["enemy", "boss"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
 		enemy_nodes.append(node)
-		enemy_home.append(node.position.x)
+		enemy_home.append(enemy_slots[i].position.x)
 
 # Give a combatant its idle animation if art exists for it, otherwise leave the
 # placeholder block showing. Art is found by name, so dropping
@@ -220,18 +222,20 @@ func log_message(text: String) -> void:
 # --- The turn cue: step forward, everyone else drifts back -----------------
 
 func _step(index: int, is_hero: bool) -> void:
+	# Heroes who aren't acting never move - only the current actor steps, and
+	# only they get put back on their saved spot afterward. Resetting everyone
+	# first (a no-op for whoever's already home) keeps that true regardless of
+	# whose turn just ended.
+	_reset_heroes()
 	if not is_hero:
 		# Enemies step too, or their turn has no cue at all - which matters most
 		# on a 2-action enemy, where two hits land with nothing marking who.
 		# Enemies face left, so "forward" is negative x.
 		for i in enemy_nodes.size():
 			var to_x: float = enemy_home[i] + (-STEP_FORWARD if i == index else -STEP_BACK)
-			_slide(enemy_nodes[i], to_x)
-		_reset_heroes()
+			_slide(enemy_nodes[i].get_parent(), to_x)
 		return
-	for i in hero_nodes.size():
-		var target_x: float = slot_home[i] + (STEP_FORWARD if i == index else STEP_BACK)
-		_slide(hero_nodes[i].get_parent(), target_x)
+	_slide(hero_nodes[index].get_parent(), slot_home[index] + STEP_FORWARD)
 	_reset_enemies()
 
 func _reset_heroes() -> void:
@@ -240,7 +244,7 @@ func _reset_heroes() -> void:
 
 func _reset_enemies() -> void:
 	for i in enemy_nodes.size():
-		_slide(enemy_nodes[i], enemy_home[i])
+		_slide(enemy_nodes[i].get_parent(), enemy_home[i])
 
 func _slide(node: Node2D, to_x: float) -> void:
 	var tween := create_tween()

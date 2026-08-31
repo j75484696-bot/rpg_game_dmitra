@@ -1,51 +1,65 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bkdi1psb01nr7"]
 
-[node name="HeroPanel" type="PanelContainer"]
+[node name="HeroPanel" type="PanelContainer" unique_id=964003691]
 custom_minimum_size = Vector2(210, 0)
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="MarginContainer" parent="." unique_id=981968241]
+layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 6
 
-[node name="Rows" type="VBoxContainer" parent="Margin"]
+[node name="Rows" type="VBoxContainer" parent="Margin" unique_id=1756139932]
+layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="Margin/Rows"]
+[node name="NameLabel" type="Label" parent="Margin/Rows" unique_id=1163080065]
+layout_mode = 2
 text = "HERO"
 
-[node name="HpRow" type="HBoxContainer" parent="Margin/Rows"]
+[node name="HpRow" type="HBoxContainer" parent="Margin/Rows" unique_id=1226023612]
+layout_mode = 2
 
-[node name="HpTag" type="Label" parent="Margin/Rows/HpRow"]
+[node name="HpTag" type="Label" parent="Margin/Rows/HpRow" unique_id=737322661]
+layout_mode = 2
 text = "HP"
 
-[node name="HpBar" type="ProgressBar" parent="Margin/Rows/HpRow"]
-custom_minimum_size = Vector2(90, 0)
+[node name="HpBar" type="ProgressBar" parent="Margin/Rows/HpRow" unique_id=608783412]
+custom_minimum_size = Vector2(90, 15)
+layout_mode = 2
 size_flags_horizontal = 3
 show_percentage = false
 
-[node name="HpValue" type="Label" parent="Margin/Rows/HpRow"]
+[node name="HpValue" type="Label" parent="Margin/Rows/HpRow" unique_id=1035999189]
+layout_mode = 2
 text = "0/0"
 
-[node name="StaminaRow" type="HBoxContainer" parent="Margin/Rows"]
+[node name="StaminaRow" type="HBoxContainer" parent="Margin/Rows" unique_id=1018418882]
+layout_mode = 2
 
-[node name="StaminaTag" type="Label" parent="Margin/Rows/StaminaRow"]
+[node name="StaminaTag" type="Label" parent="Margin/Rows/StaminaRow" unique_id=533410271]
+layout_mode = 2
 text = "ACT"
 
-[node name="StaminaBar" type="ProgressBar" parent="Margin/Rows/StaminaRow"]
-custom_minimum_size = Vector2(90, 0)
+[node name="StaminaBar" type="ProgressBar" parent="Margin/Rows/StaminaRow" unique_id=573701363]
+custom_minimum_size = Vector2(90, 15)
+layout_mode = 2
 size_flags_horizontal = 3
 show_percentage = false
 
-[node name="StaminaValue" type="Label" parent="Margin/Rows/StaminaRow"]
+[node name="StaminaValue" type="Label" parent="Margin/Rows/StaminaRow" unique_id=1719230423]
+layout_mode = 2
 text = "0/0"
 
-[node name="UltRow" type="HBoxContainer" parent="Margin/Rows"]
+[node name="UltRow" type="HBoxContainer" parent="Margin/Rows" unique_id=2006957170]
+layout_mode = 2
 
-[node name="UltTag" type="Label" parent="Margin/Rows/UltRow"]
+[node name="UltTag" type="Label" parent="Margin/Rows/UltRow" unique_id=2111450752]
+layout_mode = 2
 text = "ULT"
 
-[node name="UltBar" type="ProgressBar" parent="Margin/Rows/UltRow"]
-custom_minimum_size = Vector2(90, 0)
+[node name="UltBar" type="ProgressBar" parent="Margin/Rows/UltRow" unique_id=924574535]
+custom_minimum_size = Vector2(90, 15)
+layout_mode = 2
 size_flags_horizontal = 3
 show_percentage = false

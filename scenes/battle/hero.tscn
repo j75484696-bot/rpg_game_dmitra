@@ -4,6 +4,7 @@
 size = Vector2(56, 64)
 
 [node name="Hero" type="Node2D"]
+scale = Vector2(2.0, 2.0)
 
 [node name="Placeholder" type="ColorRect" parent="."]
 offset_left = -32.0

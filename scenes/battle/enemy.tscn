@@ -4,6 +4,7 @@
 size = Vector2(56, 64)
 
 [node name="Enemy" type="Node2D"]
+scale = Vector2(1.75, 1.75)
 
 [node name="Placeholder" type="ColorRect" parent="."]
 offset_left = -32.0
@@ -16,9 +17,9 @@ offset = Vector2(0, -32)
 
 [node name="HpBar" type="ProgressBar" parent="."]
 offset_left = -40.0
-offset_top = -86.0
+offset_top = -90.0
 offset_right = 40.0
-offset_bottom = -72.0
+offset_bottom = -70.0
 show_percentage = false
 
 [node name="NameLabel" type="Label" parent="."]
