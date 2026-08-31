@@ -7,6 +7,173 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-31 — UI frame
+
+### Added
+- **`assets/ui/ui_panel.png`** — the 32×32 beveled gold frame, 9-sliced at
+  **6, 6, 6, 6**. One file now frames every `PanelContainer`, `Panel` and
+  `Button` in the game: hero panels, enemy panel, message log, action menu.
+- **`tools/gen_frame.gd`** — the frame arrived as a Piskel browser-console
+  script rather than a PNG, so it is ported to GDScript and the image is
+  generated from the project. Re-emit with
+  `godot --headless --path . --script tools/gen_frame.gd`. The source of truth
+  is a file in the repo instead of a snippet in a browser tab.
+
+### Changed
+- `ui/themes/main.tres` gains five `StyleBoxTexture`s — one panel, four button
+  states. **Edges TILE rather than stretch**: with `Nearest` filtering a
+  stretched edge at a non-integer factor produces uneven pixel runs (some 2px,
+  some 3px), which reads as wrong even though nothing is blurred.
+- **Button states are the same texture re-tinted** — hover brighter, pressed
+  darker, disabled dimmed and faded. So `ui_btn_*.png` is now only worth
+  drawing if the states should differ in *shape*, not just brightness.
+
+Verified in-engine: a 32×32 source framing a 210×102 panel, margins 6/6/6/6,
+both axes TILE, and all four button states resolving with distinct tints.
+
+### Docs
+`NAMING.md` gains a 9-slice section with the three rules a frame must satisfy
+(corners inside the margin boxes, edges uniform along their stretch axis, flat
+centre) and the note about button art. `STRUCTURE.md` gains `tools/`.
+
+---
+
+## 2026-08-28 — damage flash and shake
+
+### Added
+- **Hit flash.** The struck combatant overbrights on impact and fades back over
+  0.16s. Values above 1.0 blow out rather than merely lighten, which reads as
+  impact instead of a colour change.
+- **Hit shake.** Three-step displacement, 7px out, 4px back, settle — 0.15s
+  total.
+- **Super-effective hits flash red-white** instead of white, and the log
+  appends `SUPER EFFECTIVE`. The multiplier is read from `Elements.matchup()`
+  rather than re-derived, so the tell can never disagree with the damage.
+  Nothing else in the game teaches the type chart.
+
+### The thing that made this non-trivial
+Both effects act on the **Sprite child**, never on the node or slot that does
+the step-forward. Heroes step by moving their *slot* and enemies by moving
+*themselves* — so shaking the node would have been safe for heroes and would
+have fought the turn cue for enemies. Two tweens on one position property means
+the loser's target is where the character stays parked.
+
+Each effect also kills its own previous tween, and the shake resets `x` to 0
+before starting, since an interrupted shake can leave the sprite mid-swing.
+
+Verified in-engine, including that the step-forward still lands on its home x
+after a shake:
+
+    rest        modulate (1,1,1)        x 0.0
+    on hit      modulate (3.0,1.1,1.1)  <- super-effective tint
+    mid-shake   x 1.0                   <- displaced
+    settled     modulate (1,1,1)        x 0.0
+    enemy node  x 890.0 = home 890.0    <- step unaffected
+
+That tint fired because Zeph is Wind and Mudling is Earth — the chart driving
+the visual, unprompted.
+
+---
+
+## 2026-08-28 — the ultimate is usable
+
+### Added
+- **`Actions.TYPE.ULT`** — a fifth action type, cost 1 like the rest.
+- **`Combat.ultimate()`** — the placeholder effect: `ATT × 2.5` through the
+  normal damage path, so DEF and the element matchup still apply and no new
+  rules enter the game. `COMBAT_DATA.md` asked for a "placeholder ult" and
+  never said what it does; this is the simplest thing that reads as heavy.
+- **An ULTIMATE button** in the shared action menu. Disabled until charged, and
+  labelled with the current percentage while it fills — `ULTIMATE (64%)` — so
+  the gate is visible rather than a dead button.
+
+### Fixed
+- **The ultimate recharged itself.** `act()` charges the meter from damage
+  dealt, and the ult deals ~70, so firing it immediately refunded 35% of the
+  bar it had just spent. `ULT` is now excluded from ult gain. Caught by
+  probing the meter after firing, not by reading the code.
+
+### Design decisions
+- **The ult costs an action as well as the meter.** A free ult would mean
+  ulting *and* attacking on the same turn.
+- **`spend_ult()` is the gate and the spend in one call** — it returns `false`
+  and changes nothing unless the meter is full, so `BattleState` fires and
+  checks in one step, refunding the action on failure. A mis-click costs
+  nothing.
+
+Verified in-engine:
+
+    empty meter   -> act() returns false, 3 actions still unspent
+    charged       -> button enabled, reads "ULTIMATE"
+    fired         -> 70 damage where a normal hit did 19; meter 100 -> 0
+    normal hit    -> meter charges again
+
+### Docs updated
+`COMBAT_DATA.md` (ult rules + placeholder warning), `INTEGRATION_SEAMS.md`
+(`ULT` in `Actions.TYPE`, `Combat.ultimate()`, quick reference), `NAMING.md`
+(`ui_btn_ult.png`).
+
+---
+
+## 2026-08-28 — ultimate meter
+
+### Added
+- **`Character.ult_meter`** plus `is_ult_ready()`, `spend_ult()` and
+  `gain_ult()` — built to the signatures locked in `INTEGRATION_SEAMS.md`,
+  which have been ⏳ since the project started. `gain_ult()` calls
+  `Combat.ult_gain()` and owns only the clamp; the doc is explicit that
+  `Combat` owns the rates and they must not be reimplemented.
+- **The ult bar is live** in all three hero panels, and glows gold at 100.
+
+### Changed
+- **The hero combatant dictionary now carries `source`**, the `Character` it was
+  built from. Ult charge has to persist across fights, and the combatant dict
+  dies with the battle scene — so the meter is written back to the Character
+  rather than held in the fight.
+- `BattleState` charges the meter from both directions: the actor gains on
+  damage **dealt** in `act()`, the target gains on damage **taken** in
+  `_apply_damage()`.
+
+Verified both directions in-engine rather than by inspection:
+
+    Zeph deals 19  -> ult 9    (19 / 2)
+    Aria takes 40  -> ult 10   (40 / 4)
+
+Ignis and Aria correctly stayed at 0 while Zeph acted.
+
+### Confirmed working
+- **Enemy HP bars render.** `visible=true`, 80×14, on screen above each sprite,
+  tracking real HP.
+
+---
+
+## 2026-08-28 — bars drain
+
+### Changed
+- **HP and action bars slide to their new value** over 0.25s instead of
+  snapping. A 40-damage hit that teleports the bar reads as a glitch; the same
+  hit draining reads as a hit. Eased out, so it moves fast then settles.
+- Every bar now goes through `_set_bar()`, which **kills any tween already
+  running on that bar** first. Two hits landing inside the drain window would
+  otherwise leave two tweens fighting over one property, and the bar would
+  settle on whichever finished last rather than on the real HP.
+- The initial fill passes `animate = false` — bars should start correct, not
+  animate up from zero.
+
+Verified by timing an actual hit: full at 70, still 70 the instant the blow
+lands, 56.4 mid-drain, settling exactly on the real HP of 51.
+
+### Still not wired
+- **The Ult bar.** The node exists in all three hero panels and is never
+  updated, because `Character` has no `ult_meter` field — `ult_meter`,
+  `is_ult_ready()`, `spend_ult()` and `gain_ult()` are all agreed in
+  `INTEGRATION_SEAMS.md` and none are built. `Combat.ult_gain()` computes the
+  number; nothing stores it.
+- **The enemy panel's HP bar** (top-right). It has no target-tracking to drive
+  it — the per-enemy bars above each sprite are the live ones.
+
+---
+
 ## 2026-08-28 — UI font
 
 ### Added
@@ -575,6 +742,7 @@ Things the code is waiting on. Each one blocks work that is otherwise ready.
 | Shop stock, prices, sell rate | Shop screen can't be built | Team |
 | Starting gold, potion count, and which four starter items | `Inventory.STARTING_*` are placeholders | Team |
 | Where does gold come from? | No enemy has a gold value | Team |
+| **How many enemies per fight — encounters AND dungeon?** | Undecided for both. The code takes a variable list either way, so nothing is blocked — but XP pacing assumes one enemy per dungeon fight (15+25+30 = the doc's "~70"), and "8–12 XP each" pays triple for a group of three | Team |
 | Does a fight run with fewer than three heroes? | `BattleState.setup()` will happily build two. Unclear whether that's intended or should end the run | Coder A |
 | Is "all heroes permanently out" a wipe? | Different condition from "all at 0 HP this fight", which is all `_party_wiped()` knows | Coder A |
 | `wind_2` / `earth_2` don't exist | `refresh_spells()` generates them at level 3, which is reachable in the demo | Team |

@@ -8,7 +8,7 @@
 extends Node
 
 # The four things anyone can do on their turn.
-enum TYPE { MELEE, SPELL, ITEM, GUARD }
+enum TYPE { MELEE, SPELL, ITEM, GUARD, ULT }
 
 # What each type costs. All 1 for the demo — COMBAT_DATA.md states this only for
 # items ("usable in battle, cost 1 action"); the rest are assumed to match.
@@ -18,6 +18,9 @@ const COST := {
 	TYPE.SPELL: 1,
 	TYPE.ITEM: 1,
 	TYPE.GUARD: 1,
+	# The ult still costs an action. The full meter is what gates it, but a
+	# free ult would mean ulting AND attacking on the same turn.
+	TYPE.ULT: 1,
 }
 
 # For buttons and the message log.
@@ -26,6 +29,7 @@ const LABEL := {
 	TYPE.SPELL: "Spell",
 	TYPE.ITEM: "Item",
 	TYPE.GUARD: "Guard",
+	TYPE.ULT: "Ultimate",
 }
 
 # --- How many actions a turn buys ----------------------------------------

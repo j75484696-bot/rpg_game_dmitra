@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dtbfgqau50gkx"]
+[gd_scene format=3 uid="uid://djd2e4cehjs0k"]
 
 [ext_resource type="Script" uid="uid://8751vxovttrl" path="res://scenes/battle/battle.gd" id="1"]
 [ext_resource type="PackedScene" path="res://ui/hud/hero_panel.tscn" id="2"]
@@ -120,10 +120,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -386.0
-offset_top = -153.0
-offset_right = -6.0
-offset_bottom = -3.0
+offset_left = -400.0
+offset_top = -187.0
+offset_right = -20.0
+offset_bottom = -12.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -168,6 +168,10 @@ custom_minimum_size = Vector2(180, 36)
 layout_mode = 2
 text = "SPELL"
 icon = ExtResource("6")
+
+[node name="UltButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=39817754]
+layout_mode = 2
+text = "ULTIMATE"
 
 [node name="EndTurnButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=79984481]
 layout_mode = 2

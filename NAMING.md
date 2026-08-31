@@ -308,13 +308,35 @@ sprite per element.
 
 ### UI · Icons · VFX (Designer 3)
 - **`ui_hpbar.png`**, **`ui_stamina.png`**, **`ui_ultmeter.png`**, **`ui_panel.png`**
-- **`ui_btn_attack.png`**, **`ui_btn_spell.png`**, **`ui_btn_item.png`**, **`ui_btn_guard.png`**
+- **`ui_btn_attack.png`**, **`ui_btn_spell.png`**, **`ui_btn_item.png`**, **`ui_btn_guard.png`**, **`ui_btn_ult.png`**
 - **`icon_spell_<element>_<n>.png`** ×6
 - **`icon_skill_1.png`** … `icon_skill_5.png`
 - **`icon_item_potion.png`**, **`icon_item_molotov.png`**, **`icon_item_bomb.png`**, **`icon_item_grenade.png`**
 - **`ui_shop_panel.png`** (shop screen frame), **`icon_gold.png`** (currency)
 - `vfx_fire_01.png`, `vfx_water_01.png`, `vfx_wind_01.png`, `vfx_earth_01.png`
 - `ui_title_logo.png`
+
+### UI frames (9-slice)
+
+- **`ui_panel.png`** — 32×32, slice margins **6, 6, 6, 6**. One file frames
+  every panel, button and log in the game through `ui/themes/main.tres`.
+
+Requirements for any 9-slice frame:
+
+| Rule | Why |
+|---|---|
+| Corners live entirely inside the 6×6 boxes | they never scale — anything poking out lands in a stretched region |
+| Each edge strip is **uniform along its stretch axis** | edges are set to **TILE**, so the strip repeats at native size |
+| The centre is **one flat colour** | it stretches across the whole panel |
+
+Edges tile rather than stretch. With `Nearest` filtering a stretched edge at a
+non-integer factor gives uneven pixel runs — some 2px, some 3px — which reads
+as wrong even though nothing is blurred.
+
+> **Button state art may not be needed.** `normal` / `hover` / `pressed` /
+> `disabled` are currently the same texture re-tinted in the theme, so
+> `ui_btn_*.png` is only worth drawing if the states should differ in shape,
+> not just brightness.
 
 ### Fonts
 - **`alagard.ttf`** — the UI typeface, in `assets/fonts/`. Applied project-wide

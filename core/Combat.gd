@@ -64,5 +64,14 @@ func heal(value: int, current_hp: int, max_hp: int) -> int:
 
 # COMBAT_DATA.md: +1 per 2 damage dealt, +1 per 4 damage taken.
 # Returns the GAIN, unclamped. Character.gain_ult() owns clamping to 100.
+# PLACEHOLDER ultimate: a heavy ATT-scaled blow. COMBAT_DATA.md calls for a
+# "placeholder ult" and never defines what it does, so this is the simplest
+# thing that reads as devastating: the normal damage path at 2.5x. It still
+# respects DEF and the element matchup, so no new rules enter the game.
+const ULT_MULTIPLIER := 2.5
+
+func ultimate(attacker: Dictionary, target: Dictionary) -> int:
+	return _resolve(attacker["att"] * ULT_MULTIPLIER, attacker["element"], target, true)
+
 func ult_gain(damage_dealt: int, damage_taken: int) -> int:
 	return int(damage_dealt / 2) + int(damage_taken / 4)

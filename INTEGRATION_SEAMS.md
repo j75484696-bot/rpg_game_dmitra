@@ -1,4 +1,4 @@
-# 🔌 Integration Seams — The Public API
+`Combat.melee/spell/item/ultimate/heal/ult_gain(...)` | `int` |# 🔌 Integration Seams — The Public API
 
 **What this is:** every function, signal and field the rest of the game can call on the shared systems in `core/`. If you need to know how two halves of the project connect, this is the file.
 
@@ -294,7 +294,9 @@ var restored := Combat.heal(60, hero["hp"], hero["max_hp"])
 ## 🎬 Actions (autoload) + ActionBudget (class)
 
 ### `Actions.TYPE`
-`MELEE`, `SPELL`, `ITEM`, `GUARD`. **All cost 1** (`Actions.COST`). Split them apart if a spell should ever cost two.
+`MELEE`, `SPELL`, `ITEM`, `GUARD`, `ULT`. **All cost 1** (`Actions.COST`). Split them apart if a spell should ever cost two.
+
+`ULT` costs an action **and** a full meter — the meter is the gate, but a free ult would mean ulting *and* attacking on the same turn. `BattleState` calls `char.spend_ult()`, which gates and spends in one call, and refunds the action if the meter was not full.
 
 ### Action counts
 | Call | Returns |
@@ -511,8 +513,8 @@ nothing else needs to know how art is stored.
 | `char.level_up()` | `void` |
 | `char.spend_point_on_stat(i)` / `unlock_skill(id)` | `bool` |
 | `char.equip_spell(id)` / `unequip_spell(id)` | `bool` |
-| ⏳ `char.has_skill(id)` / `is_ult_ready()` / `spend_ult()` | `bool` |
-| ⏳ `char.gain_ult(dealt, taken)` | `void` |
+| ⏳ `char.has_skill(id)` · `char.is_ult_ready()` / `spend_ult()` | `bool` |
+| `char.gain_ult(dealt, taken)` | `void` |
 | `Elements.matchup(a, d)` | `float` (1.5 / 1.0 / 0.5) |
 | `Elements.name_of(e)` | `String` |
 | `Elements.base_stat(e, stat)` | `int` |

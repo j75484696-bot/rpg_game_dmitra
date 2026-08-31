@@ -46,6 +46,12 @@ final stat = level-1 base + growth x (level - 1) + spent points x PER_POINT
 - **Max actions/turn** = `2 + int(STA / 30)` → Ignis 2, Aria 3, Zeph 3, Craig 3.
 - **Ult meter** fills 0→100: `+1 per 2 damage dealt`, `+1 per 4 damage taken`.
   Starting values, tuned in playtest.
+- **The ultimate** costs **one action** and a **full meter**, and deals
+  `ATT × 2.5` through the normal damage path — DEF is subtracted, the element
+  matchup applies. `Combat.ultimate()`. **Firing it does not charge the meter**
+  from its own damage, or a big ult refunds a third of its own bar.
+  ⚠️ Placeholder: the multiplier is a starting value and the effect is a plain
+  single-target hit. No animation, no special behaviour per hero.
 
 ### Combat positions
 
@@ -119,6 +125,10 @@ Every other pairing is neutral.
 > ⚠️ **Dark and Light are strong against each other**, so that pairing is ×1.5
 > in both directions and never ×0.5. Nothing in the demo uses either element,
 > so it's harmless today — but it's the one asymmetry in the chart.
+
+**On screen:** a super-effective hit flashes the target **red-white** instead of
+white, and the battle log appends `SUPER EFFECTIVE`. Nothing else teaches the
+chart, so that tell is the whole feedback loop.
 
 **What this means for the demo:** Zeph shreds Mudling (Wind→Earth). Ignis
 shreds Frostbite Imp (Fire→Ice). Aria shreds Emberhound and Ashfang
@@ -256,6 +266,12 @@ reset on entering a dungeon. They're per-run state, so they don't live on
 
 **A dungeon run:** enter → three normal fights in order, with a prep menu
 between each → Ashfang → clear.
+
+> ⚠️ **Group size is undecided** — for dungeon fights and map encounters alike.
+> "Three normal fights" fixes the number of *fights*, not how many enemies
+> stand in each. The code takes a variable list either way, so nothing is
+> blocked; but the XP figures below assume one enemy per dungeon fight, and
+> "8–12 XP each" pays triple for a group of three.
 
 **XP is awarded the moment an enemy dies**, not on clear, so heroes can level
 mid-dungeon. That's why the prep menu needs a spend-your-point screen.

@@ -35,6 +35,17 @@ const STEP_FORWARD := 50.0
 const STEP_BACK := -40.0
 const STEP_TIME := 0.18
 
+# Bars slide to their new value rather than snapping. A 40-damage hit that
+# teleports the bar reads as a glitch; the same hit draining reads as a hit.
+const BAR_DRAIN_TIME := 0.25
+
+# Hit feedback. Both act on the SPRITE, never on the node or slot that does the
+# stepping — two tweens on one position property fight, and the loser's target
+# is where the character stays parked.
+const FLASH_TIME := 0.16
+const SHAKE_OFFSET := 7.0
+const SHAKE_STEP := 0.05
+
 @onready var hero_slots: Array = [
 	$Heroes/FrontSlot,
 	$Heroes/CenterSlot,
@@ -58,6 +69,7 @@ const STEP_TIME := 0.18
 @onready var action_menu: PanelContainer = $Hud/ActionMenu
 @onready var actor_label: Label = $Hud/ActionMenu/Margin/Rows/ActorLabel
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
+@onready var ult_button: Button = $Hud/ActionMenu/Margin/Rows/UltButton
 @onready var end_turn_button: Button = $Hud/ActionMenu/Margin/Rows/EndTurnButton
 @onready var damage_layer: Control = $Hud/DamageNumbers
 @onready var background: TextureRect = $BackgroundLayer/Background
@@ -87,6 +99,7 @@ func _ready() -> void:
 		Actions.TYPE.SPELL: buttons.get_node("SpellButton"),
 		Actions.TYPE.ITEM: buttons.get_node("ItemButton"),
 		Actions.TYPE.GUARD: buttons.get_node("GuardButton"),
+		Actions.TYPE.ULT: ult_button,
 	}
 	for type in action_buttons:
 		action_buttons[type].pressed.connect(_on_action_pressed.bind(type))
@@ -106,7 +119,7 @@ func _start_fight() -> void:
 	battle.setup(_active_heroes(), _enemy_dicts())
 	_build_hero_nodes()
 	_build_enemy_nodes()
-	_refresh_panels()
+	_refresh_panels(false)   # first fill is just correct, it does not animate up
 	battle.begin()
 
 # The pusher can name a background; otherwise leave whatever's already set on
@@ -184,7 +197,7 @@ func _dress(node: Node2D, display_name: String, prefixes: Array) -> void:
 
 # --- Display --------------------------------------------------------------
 
-func _refresh_panels() -> void:
+func _refresh_panels(animate: bool = true) -> void:
 	for i in hero_panels.size():
 		var panel: Control = hero_panels[i]
 		if i >= battle.heroes.size():
@@ -196,24 +209,33 @@ func _refresh_panels() -> void:
 
 		var hp_bar: ProgressBar = rows.get_node("HpRow/HpBar")
 		hp_bar.max_value = int(h["max_hp"])
-		hp_bar.value = int(h["hp"])
+		_set_bar(hp_bar, int(h["hp"]), animate)
 		rows.get_node("HpRow/HpValue").text = "%d/%d" % [int(h["hp"]), int(h["max_hp"])]
 
 		# The action bar is the live budget, not a stat - it drains as you act.
 		var budget: ActionBudget = h["budget"]
 		var act_bar: ProgressBar = rows.get_node("StaminaRow/StaminaBar")
 		act_bar.max_value = max(1, budget.max_actions)
-		act_bar.value = budget.remaining
+		_set_bar(act_bar, budget.remaining, animate)
 		rows.get_node("StaminaRow/StaminaValue").text = "%d/%d" % [budget.remaining, budget.max_actions]
+
+		# Ult charge lives on the Character, not the combatant dict, because it
+		# persists across fights. 0-100, fills from damage dealt and taken.
+		var ult_bar: ProgressBar = rows.get_node("UltRow/UltBar")
+		ult_bar.max_value = Character.ULT_FULL
+		var charge: int = int(h["source"].ult_meter) if h.has("source") else 0
+		_set_bar(ult_bar, charge, animate)
+		# Ready is worth shouting about — it is the one action with no cost.
+		ult_bar.modulate = Color(1.4, 1.25, 0.6) if charge >= Character.ULT_FULL else Color.WHITE
 
 		# Dimmed rather than hidden, so the player still sees who fell.
 		panel.modulate = Color.WHITE if h["alive"] else Color(0.45, 0.45, 0.45)
 
-func _refresh_enemies() -> void:
+func _refresh_enemies(animate: bool = true) -> void:
 	for i in enemy_nodes.size():
 		var e: Dictionary = battle.enemies[i]
 		var node: Node2D = enemy_nodes[i]
-		node.get_node("HpBar").value = int(e["hp"])
+		_set_bar(node.get_node("HpBar"), int(e["hp"]), animate)
 		node.modulate = Color.WHITE if e["alive"] else Color(0.3, 0.3, 0.3, 0.5)
 
 func log_message(text: String) -> void:
@@ -246,6 +268,56 @@ func _reset_enemies() -> void:
 	for i in enemy_nodes.size():
 		_slide(enemy_nodes[i].get_parent(), enemy_home[i])
 
+# Drive every bar through here. Two hits landing inside the drain window would
+# otherwise leave two tweens fighting over one property, and the bar settles on
+# whichever finishes last — so the previous one is killed first.
+# animate=false is for the initial fill, which should just be correct, not
+# animate up from zero.
+func _set_bar(bar: ProgressBar, value: float, animate: bool = true) -> void:
+	if bar.has_meta("drain"):
+		var running = bar.get_meta("drain")
+		if is_instance_valid(running):
+			running.kill()
+	if not animate:
+		bar.value = value
+		return
+	var tween := create_tween()
+	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(bar, "value", value, BAR_DRAIN_TIME)
+	bar.set_meta("drain", tween)
+
+# Whatever is actually on screen for this combatant — the animation if it has
+# art, the placeholder block if it doesn't. Both flash and shake the same way.
+func _visual_of(node: Node2D) -> CanvasItem:
+	var sprite: AnimatedSprite2D = node.get_node("Sprite")
+	return sprite if sprite.sprite_frames != null else node.get_node("Placeholder")
+
+# Flash white on a hit, red-white when the element matchup is super effective —
+# so the type chart is legible without a word of UI.
+func _hit_feedback(node: Node2D, super_effective: bool) -> void:
+	var v: CanvasItem = _visual_of(node)
+
+	if v.has_meta("flash"):
+		var old_flash = v.get_meta("flash")
+		if is_instance_valid(old_flash):
+			old_flash.kill()
+	# Above 1.0 overbrights rather than just lightening, which reads as impact.
+	v.modulate = Color(3.0, 1.1, 1.1) if super_effective else Color(3.0, 3.0, 3.0)
+	var flash := create_tween()
+	flash.tween_property(v, "modulate", Color.WHITE, FLASH_TIME)
+	v.set_meta("flash", flash)
+
+	if v.has_meta("shake"):
+		var old_shake = v.get_meta("shake")
+		if is_instance_valid(old_shake):
+			old_shake.kill()
+	v.position.x = 0.0   # a killed shake can leave it mid-swing
+	var shake := create_tween()
+	shake.tween_property(v, "position:x", SHAKE_OFFSET, SHAKE_STEP)
+	shake.tween_property(v, "position:x", -SHAKE_OFFSET * 0.6, SHAKE_STEP)
+	shake.tween_property(v, "position:x", 0.0, SHAKE_STEP)
+	v.set_meta("shake", shake)
+
 func _slide(node: Node2D, to_x: float) -> void:
 	var tween := create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
@@ -270,6 +342,12 @@ func _refresh_action_menu() -> void:
 	# stamina system, so it is driven by the same call that would spend.
 	for type in action_buttons:
 		action_buttons[type].disabled = not budget.can_spend(type)
+
+	# The ult needs a full meter on TOP of a spare action, so it cannot ride the
+	# plain can_spend() check. Label it with the charge so the gate is visible.
+	var charged: bool = actor.has("source") and actor["source"].is_ult_ready()
+	ult_button.disabled = ult_button.disabled or not charged
+	ult_button.text = "ULTIMATE" if charged else "ULTIMATE (%d%%)" % int(actor["source"].ult_meter if actor.has("source") else 0)
 
 func _on_action_pressed(type: int) -> void:
 	var t: Dictionary = battle.current()
@@ -328,9 +406,14 @@ func on_action_taken(actor: int, actor_is_hero: bool, type: int, target: int, am
 		log_message("%s guards %s." % [actor_name, battle.heroes[target]["name"]])
 	elif amount > 0:
 		var world_node: Node2D = hero_nodes[target] if not actor_is_hero else enemy_nodes[target]
+		var striker: Dictionary = battle.heroes[actor] if actor_is_hero else battle.enemies[actor]
+		var struck: Dictionary = battle.enemies[target] if actor_is_hero else battle.heroes[target]
+		# Elements owns the chart; read the multiplier rather than re-deriving it.
+		var effective: bool = Elements.matchup(striker["element"], struck["element"]) > 1.0
 		_spawn_damage_number(world_node, amount)
+		_hit_feedback(world_node, effective)
 		var target_name: String = battle.heroes[target]["name"] if not actor_is_hero else battle.enemies[target]["name"]
-		log_message("%s hits %s for %d." % [actor_name, target_name, amount])
+		log_message("%s hits %s for %d%s." % [actor_name, target_name, amount, "  SUPER EFFECTIVE" if effective else ""])
 	else:
 		log_message("%s uses %s." % [actor_name, Actions.label_of(type)])
 

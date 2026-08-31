@@ -76,6 +76,9 @@ func _combatant_from_character(c: Character) -> Dictionary:
 	m["max_actions"] = c.max_actions()
 	m["alive"] = true
 	m["budget"] = ActionBudget.new()
+	# The Character itself, so ult charge can be written back. The meter has to
+	# persist across fights, and this dictionary dies with the battle.
+	m["source"] = c
 	return m
 
 func _combatant_from_dict(e: Dictionary) -> Dictionary:
@@ -207,6 +210,20 @@ func act(type: int, target_index: int) -> bool:
 				actor["budget"].refund(type)
 				return false
 			Actions.declare_guard(guards, t["index"], target_index)
+		Actions.TYPE.ULT:
+			# spend_ult() is the gate AND the spend in one call: it returns
+			# false and changes nothing unless the meter is full. Refund the
+			# action so a mis-click costs nothing.
+			if not actor.has("source") or not actor["source"].spend_ult():
+				actor["budget"].refund(type)
+				return false
+			amount = _damage_enemy(actor, target_index, true)
+
+	# Ult charges on damage DEALT. Character owns the clamp, Combat the rates.
+	# The ultimate itself is excluded: it hits hard enough that charging from
+	# its own damage refunds a third of the bar the instant it is spent.
+	if amount > 0 and type != Actions.TYPE.ULT and actor.has("source"):
+		actor["source"].gain_ult(amount, 0)
 
 	action_taken.emit(t["index"], true, type, target_index, amount)
 	_flush_deaths()
@@ -238,18 +255,21 @@ func _run_enemy_turn(enemy_index: int) -> void:
 
 # --- Damage --------------------------------------------------------------
 
-func _damage_enemy(actor: Dictionary, target_index: int) -> int:
+func _damage_enemy(actor: Dictionary, target_index: int, is_ult: bool = false) -> int:
 	if target_index < 0 or target_index >= enemies.size():
 		return 0
 	var target: Dictionary = enemies[target_index]
 	if not target["alive"]:
 		return 0
-	var dealt: int = Combat.melee(actor, target)
+	var dealt: int = Combat.ultimate(actor, target) if is_ult else Combat.melee(actor, target)
 	_apply_damage(target, dealt, target_index, false)
 	return dealt
 
 func _apply_damage(target: Dictionary, amount: int, index: int, is_hero: bool) -> void:
 	target["hp"] = max(0, int(target["hp"]) - amount)
+	# And on damage TAKEN — a hero being beaten on builds toward their ult.
+	if is_hero and amount > 0 and target.has("source"):
+		target["source"].gain_ult(0, amount)
 	if target["hp"] <= 0 and target["alive"]:
 		target["alive"] = false
 		if is_hero:

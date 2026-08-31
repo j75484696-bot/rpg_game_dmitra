@@ -26,6 +26,10 @@ const PER_POINT := [3, 15, 3, 3, 3, 3]
 # Default combat position: 0=Front, 1=Center, 2=Back1, 3=Back2 (matches Targeting.POS).
 @export var position: int = 0
 
+# Ultimate charge, 0-100. Persists across fights, so it survives a battle scene
+# being freed — that is why it lives here and not in the combatant dictionary.
+@export var ult_meter: int = 0
+
 # ids of skill-tree nodes unlocked with points
 @export var unlocked_skills: Array = []
 
@@ -66,6 +70,28 @@ func spend_point_on_stat(stat_index: int) -> bool:
 	stat_points[stat_index] += 1
 	unspent_points -= 1
 	return true
+
+# --- ULTIMATE ------------------------------------------------------------
+
+const ULT_FULL := 100
+
+func is_ult_ready() -> bool:
+	return ult_meter >= ULT_FULL
+
+# Returns true if the meter was full and is now spent. False changes nothing,
+# so the caller can fire and check in one step.
+func spend_ult() -> bool:
+	if not is_ult_ready():
+		return false
+	ult_meter = 0
+	return true
+
+# Combat owns the formula (+1 per 2 dealt, +1 per 4 taken); this owns the clamp.
+# Never reimplement the rates here — see INTEGRATION_SEAMS.md.
+func gain_ult(dealt: int, taken: int) -> void:
+	ult_meter = int(min(ULT_FULL, ult_meter + Combat.ult_gain(dealt, taken)))
+
+# --- SKILLS --------------------------------------------------------------
 
 func unlock_skill(skill_id: String) -> bool:
 	if unspent_points <= 0:
