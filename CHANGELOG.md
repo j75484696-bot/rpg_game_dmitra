@@ -7,6 +7,37 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-08-31 — UI frame
+
+### Added
+- **`assets/ui/ui_panel.png`** — the 32×32 beveled gold frame, 9-sliced at
+  **6, 6, 6, 6**. One file now frames every `PanelContainer`, `Panel` and
+  `Button` in the game: hero panels, enemy panel, message log, action menu.
+- **`tools/gen_frame.gd`** — the frame arrived as a Piskel browser-console
+  script rather than a PNG, so it is ported to GDScript and the image is
+  generated from the project. Re-emit with
+  `godot --headless --path . --script tools/gen_frame.gd`. The source of truth
+  is a file in the repo instead of a snippet in a browser tab.
+
+### Changed
+- `ui/themes/main.tres` gains five `StyleBoxTexture`s — one panel, four button
+  states. **Edges TILE rather than stretch**: with `Nearest` filtering a
+  stretched edge at a non-integer factor produces uneven pixel runs (some 2px,
+  some 3px), which reads as wrong even though nothing is blurred.
+- **Button states are the same texture re-tinted** — hover brighter, pressed
+  darker, disabled dimmed and faded. So `ui_btn_*.png` is now only worth
+  drawing if the states should differ in *shape*, not just brightness.
+
+Verified in-engine: a 32×32 source framing a 210×102 panel, margins 6/6/6/6,
+both axes TILE, and all four button states resolving with distinct tints.
+
+### Docs
+`NAMING.md` gains a 9-slice section with the three rules a frame must satisfy
+(corners inside the margin boxes, edges uniform along their stretch axis, flat
+centre) and the note about button art. `STRUCTURE.md` gains `tools/`.
+
+---
+
 ## 2026-08-28 — damage flash and shake
 
 ### Added

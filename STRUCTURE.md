@@ -24,6 +24,8 @@ res://
 │   ├── ActionBudget.gd       class_name — one combatant's actions, one turn
 │   ├── BattleState.gd        class_name — one fight, start to finish
 │   └── SpriteSheet.gd        class_name — slices a strip into SpriteFrames
+├── tools/                    Editor-run scripts, not shipped
+│   └── gen_frame.gd          regenerates assets/ui/ui_panel.png
 ├── data/                     Authored game data (.tres)
 │   ├── heroes/               ignis, aria, zeph, craig — Character instances
 │   └── enemies/              7 CreatureRating instances (6 + boss)

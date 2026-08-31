@@ -316,6 +316,28 @@ sprite per element.
 - `vfx_fire_01.png`, `vfx_water_01.png`, `vfx_wind_01.png`, `vfx_earth_01.png`
 - `ui_title_logo.png`
 
+### UI frames (9-slice)
+
+- **`ui_panel.png`** — 32×32, slice margins **6, 6, 6, 6**. One file frames
+  every panel, button and log in the game through `ui/themes/main.tres`.
+
+Requirements for any 9-slice frame:
+
+| Rule | Why |
+|---|---|
+| Corners live entirely inside the 6×6 boxes | they never scale — anything poking out lands in a stretched region |
+| Each edge strip is **uniform along its stretch axis** | edges are set to **TILE**, so the strip repeats at native size |
+| The centre is **one flat colour** | it stretches across the whole panel |
+
+Edges tile rather than stretch. With `Nearest` filtering a stretched edge at a
+non-integer factor gives uneven pixel runs — some 2px, some 3px — which reads
+as wrong even though nothing is blurred.
+
+> **Button state art may not be needed.** `normal` / `hover` / `pressed` /
+> `disabled` are currently the same texture re-tinted in the theme, so
+> `ui_btn_*.png` is only worth drawing if the states should differ in shape,
+> not just brightness.
+
 ### Fonts
 - **`alagard.ttf`** — the UI typeface, in `assets/fonts/`. Applied project-wide
   through `ui/themes/main.tres`, so nothing sets a font per node.
