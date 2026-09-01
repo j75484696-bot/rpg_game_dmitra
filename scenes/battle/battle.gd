@@ -47,9 +47,14 @@ const DOWN_COLOR := Color(1.0, 0.45, 0.45)
 # Markers shown over valid targets while an action is waiting for one.
 const ICON_DAGGER := preload("res://assets/icons/icon_fight.svg")
 const ICON_SHIELD := preload("res://assets/icons/icon_guard.svg")
-const MARKER_Y := -150.0        # above the head, clear of the HP bar
-const SHIELD_Y := -122.0        # persistent guard sits below the pick marker
+# Markers sit ON the click box, not above the head — the icon should be where
+# the player has to click, not floating somewhere they don't.
 const MARKER_SIZE := 30.0       # on-screen pixels, regardless of character scale
+# Where each marker sits inside the click box, as a fraction of its half-extent.
+# The pick marker takes the middle; the persistent shield tucks into the top
+# corner so both can show at once on an already-guarded ally.
+const PICK_OFFSET := Vector2(0.0, 0.0)
+const SHIELD_OFFSET := Vector2(0.62, -0.55)
 
 # Hit feedback acts on the SPRITE, not the node — so a shake can never fight
 # whatever else is positioning the combatant.
@@ -175,8 +180,8 @@ func _build_hero_nodes() -> void:
 		node.get_node("NameLabel").text = str(battle.heroes[i]["name"])
 		_dress(node, str(battle.heroes[i]["name"]), ["hero"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, true))
-		pick_markers[_hero_key(i)] = _make_marker(node, ICON_SHIELD, MARKER_Y)
-		guard_shields.append(_make_marker(node, ICON_SHIELD, SHIELD_Y))
+		pick_markers[_hero_key(i)] = _make_marker(node, ICON_SHIELD, PICK_OFFSET)
+		guard_shields.append(_make_marker(node, ICON_SHIELD, SHIELD_OFFSET))
 		hero_nodes.append(node)
 
 func _build_enemy_nodes() -> void:
@@ -192,7 +197,7 @@ func _build_enemy_nodes() -> void:
 		bar.value = int(e.get("hp", bar.max_value))
 		_dress(node, str(e.get("name", "")), ["enemy", "boss"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
-		pick_markers[_enemy_key(i)] = _make_marker(node, ICON_DAGGER, MARKER_Y)
+		pick_markers[_enemy_key(i)] = _make_marker(node, ICON_DAGGER, PICK_OFFSET)
 		enemy_nodes.append(node)
 
 # Give a combatant its idle animation if art exists for it, otherwise leave the
@@ -348,10 +353,19 @@ func _hit_feedback(node: Node2D, super_effective: bool) -> void:
 
 # Characters are scaled (heroes 2.0, enemies 1.75), so a marker parented to one
 # would inherit that. Counter-scale it so markers are the same size on everyone.
-func _make_marker(parent: Node2D, texture: Texture2D, y: float) -> Sprite2D:
+func _make_marker(parent: Node2D, texture: Texture2D, offset: Vector2) -> Sprite2D:
 	var marker := Sprite2D.new()
 	marker.texture = texture
-	marker.position = Vector2(0, y)
+
+	# Anchor to the ClickArea's shape, read from the node rather than hardcoded,
+	# so a resized hitbox drags its markers along instead of leaving them behind.
+	var collision: CollisionShape2D = parent.get_node("ClickArea/Collision")
+	var half := Vector2(28, 32)
+	if collision.shape is RectangleShape2D:
+		half = (collision.shape as RectangleShape2D).size * 0.5
+	marker.position = collision.position + offset * half
+
+	marker.z_index = 10   # over the sprite, never behind it
 	var px: float = float(max(texture.get_width(), 1))
 	marker.scale = Vector2.ONE * (MARKER_SIZE / px) / parent.scale.x
 	marker.visible = false

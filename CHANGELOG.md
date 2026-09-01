@@ -7,6 +7,26 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — markers moved onto the click box
+
+### Fixed
+Markers were floating **150px above the head**, disconnected from the thing the
+player has to click. They now sit **on the click box**:
+
+- the pick marker (dagger / shield) dead centre
+- the persistent guard shield tucked into the top-right corner, so both can
+  show at once on an already-guarded ally
+
+Positions are **read from the `ClickArea` collision shape at build time**, not
+hardcoded — resize the hitbox and the markers follow it instead of being left
+behind. Also given `z_index = 10` so they draw over the sprite rather than
+behind it.
+
+Verified against the real shape: click box spans y −64..0, pick marker lands at
+−32, shield at (17, −50) — both inside, on all three heroes.
+
+---
+
 ## 2026-09-01 — target markers
 
 ### Changed
