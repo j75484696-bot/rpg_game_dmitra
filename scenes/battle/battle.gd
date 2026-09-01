@@ -78,6 +78,11 @@ const SHAKE_STEP := 0.05
 	$Enemies/Enemy3Slot,
 	$Enemies/Enemy4Slot,
 ]
+# Index-aligned with DEMO_ENEMIES / battle.enemies: Mudling first, Wisp second.
+@onready var enemy_panels: Array = [
+	$Hud/EnemyPanels/MudlingPanel,
+	$Hud/EnemyPanels/WispPanel,
+]
 @onready var action_menu: PanelContainer = $Hud/ActionMenu
 @onready var actor_label: Label = $Hud/ActionMenu/Margin/Rows/ActorLabel
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
@@ -136,6 +141,7 @@ func _start_fight() -> void:
 	_build_hero_nodes()
 	_build_enemy_nodes()
 	_refresh_panels(false)   # first fill is just correct, it does not animate up
+	_refresh_enemies(false)
 	battle.begin()
 
 # The pusher can name a background; otherwise leave whatever's already set on
@@ -255,6 +261,16 @@ func _refresh_enemies(animate: bool = true) -> void:
 		var node: Node2D = enemy_nodes[i]
 		_set_bar(node.get_node("HpBar"), int(e["hp"]), animate)
 		node.modulate = Color.WHITE if e["alive"] else Color(0.3, 0.3, 0.3, 0.5)
+
+		# Mirror the same HP onto the HUD enemy panel, same as the hero panels.
+		if i >= enemy_panels.size():
+			continue
+		var panel: Control = enemy_panels[i]
+		var panel_rows := panel.get_node("Margin/Rows")
+		var panel_hp_bar: ProgressBar = panel_rows.get_node("HpRow/HpBar")
+		panel_hp_bar.max_value = int(e["max_hp"])
+		_set_bar(panel_hp_bar, int(e["hp"]), animate)
+		panel_rows.get_node("HpRow/HpValue").text = "%d/%d" % [int(e["hp"]), int(e["max_hp"])]
 
 # No message log. Everything the player needs to read appears in world, on the
 # thing it happened to, and leaves — see _popup().
