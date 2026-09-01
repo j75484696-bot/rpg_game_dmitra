@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dc32dktnyu2rr" path="res://assets/icons/icon_items.svg" id="4"]
 [ext_resource type="Texture2D" uid="uid://bfsc75qu4q645" path="res://assets/icons/icon_guard.svg" id="5"]
 [ext_resource type="Texture2D" uid="uid://cv5pj50u3m4ul" path="res://assets/icons/icon_spell.svg" id="6"]
-[ext_resource type="Texture2D" uid="uid://0maxre0pqyng" path="res://assets/sprites/backgrounds/bg_battle_arena.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://cj4vavtvn471i" path="res://assets/sprites/backgrounds/bg_field.png" id="7"]
 [ext_resource type="PackedScene" uid="uid://b7x8qmqwb40v0" path="res://ui/hud/enemy_panel.tscn" id="8"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_py4tk"]

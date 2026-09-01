@@ -7,6 +7,31 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — new battle background
+
+### Changed
+- **`bg_field.png` replaced** with the new overworld field — 1536×1024, a much
+  deeper grass area than the previous art. `battle.tscn` repointed from
+  `bg_battle_arena.png` to it.
+
+### Nothing needed moving
+Checked rather than assumed. The background is 3:2 against a 16:9 viewport, so
+`KEEP_ASPECT_COVERED` scales by 0.833 and crops 67px off the top and bottom.
+Detecting the grass line by scanning for the first mostly-green row put it at
+**source y=464 → viewport y=320**, and all seven slots already clear it:
+
+    Front   feet 545   Center  feet 609   Back1   feet 492
+    Enemy1  feet 454   Enemy2  feet 550   Enemy3  feet 600   Enemy4  feet 635
+
+Every one standing on grass, every head clear of the treeline. The HUD misses
+them too: the action menu occupies x 880–1260 / y 533–708, and Enemy1 at
+(928, 454) sits entirely above it.
+
+`bg_battle_arena.png` is left in place — nothing references it now, but it is
+somebody else's asset to remove.
+
+---
+
 ## 2026-09-01 — hero combat sprites
 
 ### Added
