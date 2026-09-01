@@ -347,7 +347,11 @@ func _refresh_action_menu() -> void:
 	# plain can_spend() check. Label it with the charge so the gate is visible.
 	var charged: bool = actor.has("source") and actor["source"].is_ult_ready()
 	ult_button.disabled = ult_button.disabled or not charged
-	ult_button.text = "ULTIMATE" if charged else "ULTIMATE (%d%%)" % int(actor["source"].ult_meter if actor.has("source") else 0)
+	# Percentage of the way to ready, not the raw meter — those only match while
+	# ULT_FULL happens to be 100.
+	var meter: int = int(actor["source"].ult_meter) if actor.has("source") else 0
+	var pct: int = int(round(100.0 * meter / float(Character.ULT_FULL)))
+	ult_button.text = "ULTIMATE" if charged else "ULTIMATE (%d%%)" % pct
 
 func _on_action_pressed(type: int) -> void:
 	var t: Dictionary = battle.current()
