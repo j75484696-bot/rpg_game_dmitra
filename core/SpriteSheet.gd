@@ -56,8 +56,47 @@ static func strip(texture: Texture2D, cell: int, count: int, fps: float = 12.0) 
 		frames.add_frame(ANIM, slice)
 	return frames
 
-# Frame count inferred from the texture, so a strip can be re-exported with a
-# different number of frames without touching code.
+# Slice any sheet, single row or grid, without being told which.
+#
+# Cells are read left-to-right, top-to-bottom. Fully transparent cells are
+# SKIPPED — sheets are often laid out on a square grid with the last slot or
+# two left empty, and a blank frame in the loop reads as a stutter.
+#
+# Nothing about the layout is passed in: the grid comes from the texture
+# dimensions and the frame count from how many cells have pixels in them. A
+# sheet re-exported with more frames, or a different number of rows, just works.
 static func strip_auto(texture: Texture2D, cell: int = 64, fps: float = 12.0) -> SpriteFrames:
-	var count: int = max(1, int(texture.get_width() / cell))
-	return strip(texture, cell, count, fps)
+	var cols: int = max(1, int(texture.get_width() / cell))
+	var rows: int = max(1, int(texture.get_height() / cell))
+	if rows == 1:
+		return strip(texture, cell, cols, fps)
+
+	var frames := SpriteFrames.new()
+	frames.clear_all()
+	frames.add_animation(ANIM)
+	frames.set_animation_loop(ANIM, true)
+	frames.set_animation_speed(ANIM, fps)
+
+	var image := texture.get_image()
+	for row in rows:
+		for col in cols:
+			if _is_blank(image, col * cell, row * cell, cell):
+				continue
+			var slice := AtlasTexture.new()
+			slice.atlas = texture
+			slice.region = Rect2(col * cell, row * cell, cell, cell)
+			slice.filter_clip = true
+			frames.add_frame(ANIM, slice)
+
+	# A sheet of entirely blank cells would leave an animation with no frames,
+	# which Godot draws as nothing at all. Fall back to the whole grid.
+	if frames.get_frame_count(ANIM) == 0:
+		return strip(texture, cell, cols * rows, fps)
+	return frames
+
+static func _is_blank(image: Image, x: int, y: int, cell: int) -> bool:
+	for py in range(y, min(y + cell, image.get_height())):
+		for px in range(x, min(x + cell, image.get_width())):
+			if image.get_pixel(px, py).a > 0.0:
+				return false
+	return true

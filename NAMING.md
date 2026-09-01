@@ -144,19 +144,20 @@ boss_ashfang_atk_02.png
 
 ## 🎞️ Sprite sheets (how animation is actually delivered)
 
-Art arrives as **one horizontal strip per animation**, not as individual frame
-files. `core/SpriteSheet.gd` slices it at load.
+Art arrives as **one sheet per animation** — a single row, or a grid.
+`core/SpriteSheet.gd` slices it at load and works out the layout itself.
 
 ```
-<prefix>_<slug>_bidle.png        one row, no padding, square cells
+<prefix>_<slug>_bidle.png        square cells, no padding
 ```
 
 | Rule | Value |
 |---|---|
-| Layout | a **single row**, left to right |
+| Layout | a **single row**, or a **grid** read left-to-right, top-to-bottom |
 | Cell | **square** — 64×64 today |
 | Padding / margin | **none**, cells touch |
-| Frame count | **free** — inferred from image width ÷ cell |
+| Frame count | **free** — inferred from the cells that have pixels in them |
+| Empty cells | **skipped** — a square grid may leave trailing slots blank |
 | Pivot | bottom-centre, character standing on the bottom edge |
 | Playback | 12 fps, looping |
 

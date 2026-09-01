@@ -7,6 +7,39 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — hero combat sprites
+
+### Added
+New battle idles for **Ignis, Aria and Zeph** — 192×192, a **3×3 grid** of
+64×64 cells with 8 frames used and the last slot blank.
+
+### Changed
+- **`SpriteSheet` now reads grids as well as single rows**, and works the
+  layout out itself: columns and rows come from the texture dimensions, frame
+  count from how many cells actually have pixels.
+- **Fully transparent cells are skipped.** A square grid usually leaves
+  trailing slots empty, and a blank frame in a loop reads as a stutter — so the
+  9th cell here is dropped rather than played.
+- Nothing is configured per file. Grid heroes and single-row enemies coexist,
+  and a sheet re-exported with a different number of frames or rows just works.
+
+Verified in-engine — heroes read the grid in the right order and the empty
+slot at (128, 128) is absent, while the enemy strips are untouched:
+
+    Zeph / Ignis / Aria   8 frames  (0,0) (64,0) (128,0) (0,64) … (64,128)
+    Mudling / Wisp        8 frames  (0,0) (64,0) (128,0) … (448,0)
+
+### Guard against a silent failure
+A sheet of entirely blank cells would leave an animation with no frames, which
+Godot draws as **nothing at all** — the sprite would vanish with no error. That
+case falls back to slicing the whole grid instead.
+
+### Docs
+`NAMING.md`'s sheet section now covers grids, the free frame count, and skipped
+empty cells.
+
+---
+
 ## 2026-09-01 — guard is single use
 
 ### Changed
