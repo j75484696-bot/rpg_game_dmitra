@@ -7,6 +7,28 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — sprite afterimage
+
+### Fixed
+- **Animated sprites left a ghost of the next frame behind them.**
+  `AtlasTexture.filter_clip` defaults to `false` and `SpriteSheet.strip()`
+  never set it. The strips have **no padding between frames**, so sampling at a
+  region edge pulled pixels from the neighbouring frame — frame N's right edge
+  reading frame N+1's left edge. That sliver is what read as an afterimage.
+
+  Worse on enemies (`scale 1.75`) than heroes (`scale 2.0`): a non-integer
+  scale lands sampling between texel centres, where an integer scale mostly
+  does not.
+
+  Not an art problem — the sheets are correct, the slicing was.
+
+### Note for future strips
+Zero padding between frames is fine **as long as `filter_clip` is on**. If a
+sheet ever arrives with padding, the region maths in `strip()` needs the gap
+added; it currently assumes cells butt up against each other.
+
+---
+
 ## 2026-08-31 — UI frame
 
 ### Added

@@ -48,6 +48,11 @@ static func strip(texture: Texture2D, cell: int, count: int, fps: float = 12.0) 
 		var slice := AtlasTexture.new()
 		slice.atlas = texture
 		slice.region = Rect2(i * cell, 0, cell, cell)
+		# Without this, sampling near a region edge pulls pixels from the NEXT
+		# frame — the strip has no padding, so frame N's right edge reads frame
+		# N+1's left edge. It shows up as a ghost of the next frame trailing the
+		# current one, and gets worse at non-integer scales like the enemies' 1.75.
+		slice.filter_clip = true
 		frames.add_frame(ANIM, slice)
 	return frames
 
