@@ -28,6 +28,9 @@ signal turn_started(index: int, is_hero: bool)
 signal turn_ended(index: int, is_hero: bool)
 signal action_taken(actor: int, actor_is_hero: bool, type: int, target: int, amount: int)
 signal combatant_died(index: int, is_hero: bool)
+# A hit was redirected onto a guardian. action_taken only reports who finally
+# TOOK the blow, so without this the UI cannot tell a guard from a normal hit.
+signal guard_blocked(guardian: int, guarded: int, damage: int)
 signal battle_ended(party_won: bool)
 
 var phase: int = PHASE.PREP
@@ -247,6 +250,8 @@ func _run_enemy_turn(enemy_index: int) -> void:
 		if not enemy["alive"] or _party_wiped():
 			break
 		var hit: int = int(step["target"])
+		if step.get("redirected", false):
+			guard_blocked.emit(hit, int(guards.get(hit, hit)), int(step["damage"]))
 		_apply_damage(heroes[hit], int(step["damage"]), hit, true)
 		action_taken.emit(enemy_index, false, Actions.TYPE.MELEE, hit, int(step["damage"]))
 		_flush_deaths()

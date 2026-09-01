@@ -42,6 +42,15 @@ const BAR_DRAIN_TIME := 0.25
 # Hit feedback. Both act on the SPRITE, never on the node or slot that does the
 # stepping — two tweens on one position property fight, and the loser's target
 # is where the character stays parked.
+# Floating-text colours. There is no message log — these popups ARE the log.
+const DAMAGE_COLOR := Color(1.0, 0.95, 0.85)
+const EFFECTIVE_COLOR := Color(1.0, 0.72, 0.35)
+const GUARD_COLOR := Color(0.6, 0.85, 1.0)
+const DOWN_COLOR := Color(1.0, 0.45, 0.45)
+
+# Pulse applied to whichever side is currently clickable.
+const TARGET_TINT := Color(1.35, 1.35, 1.1)
+
 const FLASH_TIME := 0.16
 const SHAKE_OFFSET := 7.0
 const SHAKE_STEP := 0.05
@@ -62,10 +71,6 @@ const SHAKE_STEP := 0.05
 	$Enemies/Enemy3Slot,
 	$Enemies/Enemy4Slot,
 ]
-@onready var enemy_panel: PanelContainer = $Hud/EnemyPanel
-@onready var enemy_name: Label = $Hud/EnemyPanel/Rows/NameLabel
-@onready var enemy_hp: ProgressBar = $Hud/EnemyPanel/Rows/HpBar
-@onready var message_log: RichTextLabel = $Hud/MessageLog/Text
 @onready var action_menu: PanelContainer = $Hud/ActionMenu
 @onready var actor_label: Label = $Hud/ActionMenu/Margin/Rows/ActorLabel
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
@@ -113,6 +118,7 @@ func _start_fight() -> void:
 	battle.turn_ended.connect(on_turn_ended)
 	battle.action_taken.connect(on_action_taken)
 	battle.combatant_died.connect(on_combatant_died)
+	battle.guard_blocked.connect(on_guard_blocked)
 	battle.battle_ended.connect(on_battle_ended)
 
 	_set_background()
@@ -238,8 +244,8 @@ func _refresh_enemies(animate: bool = true) -> void:
 		_set_bar(node.get_node("HpBar"), int(e["hp"]), animate)
 		node.modulate = Color.WHITE if e["alive"] else Color(0.3, 0.3, 0.3, 0.5)
 
-func log_message(text: String) -> void:
-	message_log.text = text
+# No message log. Everything the player needs to read appears in world, on the
+# thing it happened to, and leaves — see _popup().
 
 # --- The turn cue: step forward, everyone else drifts back -----------------
 
@@ -318,6 +324,16 @@ func _hit_feedback(node: Node2D, super_effective: bool) -> void:
 	shake.tween_property(v, "position:x", 0.0, SHAKE_STEP)
 	v.set_meta("shake", shake)
 
+# Tint whichever side can be clicked right now, so the screen says "pick one of
+# these" without a line of text. clear_only puts everything back.
+func _highlight_targets(want_allies: bool, clear_only: bool = false) -> void:
+	for i in hero_nodes.size():
+		var lit: bool = not clear_only and want_allies and battle.heroes[i]["alive"]
+		_visual_of(hero_nodes[i]).modulate = TARGET_TINT if lit else Color.WHITE
+	for i in enemy_nodes.size():
+		var lit: bool = not clear_only and not want_allies and battle.enemies[i]["alive"]
+		_visual_of(enemy_nodes[i]).modulate = TARGET_TINT if lit else Color.WHITE
+
 func _slide(node: Node2D, to_x: float) -> void:
 	var tween := create_tween()
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
@@ -358,10 +374,9 @@ func _on_action_pressed(type: int) -> void:
 	if t.is_empty() or not t["is_hero"]:
 		return
 	pending_action = type
-	if type == Actions.TYPE.GUARD:
-		log_message("%s guards - click an ally to protect." % Actions.label_of(type))
-	else:
-		log_message("%s - click an enemy." % Actions.label_of(type))
+	# No prompt box. The valid side pulses instead, which says "click here"
+	# where the player is already looking.
+	_highlight_targets(type == Actions.TYPE.GUARD)
 
 func _on_end_turn_pressed() -> void:
 	pending_action = -1
@@ -388,6 +403,10 @@ func _on_combatant_clicked(_viewport: Node, event: InputEvent, _shape: int, inde
 
 	var type := pending_action
 	pending_action = -1
+	# Drop the pulse BEFORE acting. _hit_feedback writes the same modulate and
+	# ends on WHITE, so a highlight left standing would be silently wiped by the
+	# first hit and never restored.
+	_highlight_targets(false, true)
 	battle.act(type, index)
 
 # --- Reacting to the fight ------------------------------------------------
@@ -395,8 +414,7 @@ func _on_combatant_clicked(_viewport: Node, event: InputEvent, _shape: int, inde
 func on_turn_started(index: int, is_hero: bool) -> void:
 	pending_action = -1
 	_step(index, is_hero)
-	var who: Dictionary = battle.heroes[index] if is_hero else battle.enemies[index]
-	log_message("%s's turn." % who["name"])
+	_highlight_targets(false, true)   # clear any leftover pulse
 	_refresh_panels()
 	_refresh_action_menu()
 
@@ -407,48 +425,60 @@ func on_action_taken(actor: int, actor_is_hero: bool, type: int, target: int, am
 	var actor_name: String = battle.heroes[actor]["name"] if actor_is_hero else battle.enemies[actor]["name"]
 
 	if type == Actions.TYPE.GUARD:
-		log_message("%s guards %s." % [actor_name, battle.heroes[target]["name"]])
+		# Says GUARD over the hero doing the guarding, where the player clicked.
+		_popup(hero_nodes[actor], "GUARD", GUARD_COLOR, -120.0, 18)
 	elif amount > 0:
 		var world_node: Node2D = hero_nodes[target] if not actor_is_hero else enemy_nodes[target]
 		var striker: Dictionary = battle.heroes[actor] if actor_is_hero else battle.enemies[actor]
 		var struck: Dictionary = battle.enemies[target] if actor_is_hero else battle.heroes[target]
 		# Elements owns the chart; read the multiplier rather than re-deriving it.
 		var effective: bool = Elements.matchup(striker["element"], struck["element"]) > 1.0
-		_spawn_damage_number(world_node, amount)
+
+		_popup(world_node, str(amount), EFFECTIVE_COLOR if effective else DAMAGE_COLOR)
+		if effective:
+			# Sits above the number rather than replacing it, so both read.
+			_popup(world_node, "SUPER EFFECTIVE", EFFECTIVE_COLOR, -146.0, 14, 0.85)
 		_hit_feedback(world_node, effective)
-		var target_name: String = battle.heroes[target]["name"] if not actor_is_hero else battle.enemies[target]["name"]
-		log_message("%s hits %s for %d%s." % [actor_name, target_name, amount, "  SUPER EFFECTIVE" if effective else ""])
-	else:
-		log_message("%s uses %s." % [actor_name, Actions.label_of(type)])
 
 	_refresh_panels()
 	_refresh_enemies()
 	_refresh_action_menu()
 
 func on_combatant_died(index: int, is_hero: bool) -> void:
-	var who: Dictionary = battle.heroes[index] if is_hero else battle.enemies[index]
-	log_message("%s is down!" % who["name"])
+	var node: Node2D = hero_nodes[index] if is_hero else enemy_nodes[index]
+	_popup(node, "DOWN", DOWN_COLOR, -130.0, 18, 0.9)
 	_refresh_panels()
 	_refresh_enemies()
+
+# A hit was soaked by a guardian. Say so on the guardian who took it.
+func on_guard_blocked(guardian: int, _guarded: int, _damage: int) -> void:
+	_popup(hero_nodes[guardian], "GUARDED", GUARD_COLOR, -138.0, 16, 0.8)
 
 func on_battle_ended(party_won: bool) -> void:
 	action_menu.visible = false
 	_reset_heroes()
-	log_message("VICTORY - the party wins." if party_won else "DEFEAT - the party is wiped.")
+	_highlight_targets(false, true)
 	# Popping back is the caller's business once a dungeon manager exists.
 	# Standalone, there is nowhere to pop TO, so the result just stays on screen.
 
 # --- Damage numbers -------------------------------------------------------
 
-func _spawn_damage_number(at: Node2D, amount: int) -> void:
+# Floating text over a combatant. Everything the old message log used to say
+# now appears here instead: on the thing it happened to, then gone.
+# rise_from staggers stacked popups so a damage number and its SUPER EFFECTIVE
+# tag don't land on top of each other.
+func _popup(at: Node2D, text: String, color: Color, rise_from: float = -110.0,
+		font_size: int = 20, hold: float = 0.7) -> void:
 	if at == null:
 		return
-	var label := DAMAGE_NUMBER.instantiate()
+	var label: Label = DAMAGE_NUMBER.instantiate()
 	damage_layer.add_child(label)
-	label.text = str(amount)
-	label.position = at.get_global_transform_with_canvas().origin + Vector2(0, -110)
+	label.text = text
+	label.modulate = color
+	label.add_theme_font_size_override("font_size", font_size)
+	label.position = at.get_global_transform_with_canvas().origin + Vector2(0, rise_from)
 
 	var tween := create_tween().set_parallel(true)
-	tween.tween_property(label, "position:y", label.position.y - 46.0, 0.7)
-	tween.tween_property(label, "modulate:a", 0.0, 0.7)
+	tween.tween_property(label, "position:y", label.position.y - 46.0, hold)
+	tween.tween_property(label, "modulate:a", 0.0, hold)
 	tween.chain().tween_callback(label.queue_free)

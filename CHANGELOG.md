@@ -7,6 +7,50 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — HUD: information where it happens
+
+The screen carried six boxes and the player had to look away from the fight to
+read any of it. Now there are **two**, and everything else appears on the thing
+it happened to, then leaves.
+
+### Removed
+- **The message log.** Every line it printed now floats over the combatant
+  involved.
+- **The enemy panel** (top-right). Never wired, and redundant with the HP bars
+  already floating above each enemy sprite.
+- **`TurnIndicator`** — an empty node no script ever referenced. The
+  step-forward has been the turn cue since it was built.
+
+### Added
+- **`_popup()`** — floating text over any combatant, staggered vertically so a
+  damage number and its tag don't land on top of each other.
+
+| Text | Where | When |
+|---|---|---|
+| `19` | on the target | every hit |
+| `SUPER EFFECTIVE` | above the number | matchup > 1.0 |
+| `GUARD` | on the guarding hero | guard declared |
+| `GUARDED` | on the guardian | a hit is actually redirected |
+| `DOWN` | on the combatant | it dies |
+
+- **`BattleState.guard_blocked(guardian, guarded, damage)`** — a new signal.
+  `action_taken` reports only who *finally took* the blow, so the UI could not
+  distinguish a guard from a normal hit. Additive; the existing signature is
+  unchanged.
+- **Target highlighting replaces the prompt text.** Selecting an action pulses
+  whichever side is clickable — allies for Guard, enemies for everything else.
+
+### Subtle bit
+`_highlight_targets()` and `_hit_feedback()` both write `modulate` on the same
+node, and the flash tween ends on `WHITE`. A highlight left standing when a hit
+landed would be silently wiped and never restored, so the pulse is cleared
+before `act()` rather than after.
+
+Verified in-engine: HUD down to 3 children (one an invisible container), and
+all five popup types firing with the right text and colour.
+
+---
+
 ## 2026-09-01 — sprite afterimage
 
 ### Fixed
