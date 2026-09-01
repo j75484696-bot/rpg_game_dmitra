@@ -7,6 +7,42 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — guard is single use
+
+### Changed
+- **A guard is now spent by the first blow it soaks.** It still otherwise lasts
+  until the guardian acts again, or until they fall.
+
+This needed more than clearing the guard on a block. **The enemy plans its whole
+turn up front**, and guard was being resolved during planning — so a 2-action
+enemy resolved the same guard twice before either blow landed, and both hits
+would have redirected.
+
+Guard resolution therefore **moved out of `EnemyAI` and into `BattleState`**:
+
+- `EnemyAI.plan_turn()` now returns who the enemy **intends** to hit —
+  `{ target, damage, ignores_guard }` — and no longer takes a `guardians`
+  argument.
+- `BattleState._run_enemy_turn()` calls `Targeting.resolve_guard()` **per blow,
+  as it lands**, and clears the guard when it redirects.
+
+That's better separation regardless: `EnemyAI` picks targets, `BattleState`
+applies rules.
+
+Verified: Zeph guards Aria, two blows aimed at Aria. First redirects to Zeph
+for 12 (20 × 0.6) and empties the guard board; the second lands on Aria for the
+full 20.
+
+### Fixed
+- **A corrupted first line in `INTEGRATION_SEAMS.md`**, committed back in
+  `ea4b462`. A `perl -0pi -e 's|…|…|'` whose replacement contained markdown
+  table pipes terminated early and prepended a quick-reference row onto the
+  document heading. The heading is restored and the row it was meant to update
+  is now correct. Third time that delimiter mistake has bitten — table rows
+  need `awk` or a line-addressed `sed`, not pipe-delimited perl.
+
+---
+
 ## 2026-09-01 — markers moved onto the click box
 
 ### Fixed

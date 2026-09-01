@@ -1,4 +1,4 @@
-`Combat.melee/spell/item/ultimate/heal/ult_gain(...)` | `int` |# 🔌 Integration Seams — The Public API
+# 🔌 Integration Seams — The Public API
 
 **What this is:** every function, signal and field the rest of the game can call on the shared systems in `core/`. If you need to know how two halves of the project connect, this is the file.
 
@@ -12,7 +12,7 @@
 **Keeping this file honest:** any file may edit any other. That freedom only works if this doc is updated in the same commit as the code. A signature that isn't here is a signature nobody else can rely on.
 
 > ### The one hard rule
-> **All damage and healing math lives in `core/Combat.gd`.** Call `Combat.melee()` / `spell()` / `item()` / `heal()`. Never recompute a number anywhere else — the moment two places calculate damage, the UI and the fight disagree and the bug is nearly invisible.
+> **All damage and healing math lives in `core/Combat.gd`.** Call `Combat.melee()` / `spell()` / `item()` / `ultimate()` / `heal()`. Never recompute a number anywhere else — the moment two places calculate damage, the UI and the fight disagree and the bug is nearly invisible.
 
 ---
 
@@ -339,14 +339,17 @@ One combatant's actions for one turn.
 
 ## 👹 EnemyAI (autoload)
 
-### `plan_turn(enemy: Dictionary, party: Array, guardians: Dictionary = {}, overwhelm: bool = false) -> Array`
+### `plan_turn(enemy: Dictionary, party: Array, overwhelm: bool = false) -> Array`
 - **Returns:** one entry per action the enemy gets:
   ```gdscript
-  { "target": int, "damage": int, "redirected": bool }
+  { "target": int, "damage": int, "ignores_guard": bool }
   ```
-- `target` is who **actually takes** the hit, after Guard redirection. Empty array if the party is down.
+- `target` is who the enemy **intends** to hit. Empty array if the party is down.
+- ⚠️ **Guard is NOT applied here.** The caller resolves it per action, as each blow lands — see below.
+- `ignores_guard` is `true` for overwhelm steps, which bypass Guard by design.
 - `overwhelm` only engages if the enemy is **also** below `OVERWHELM_HP_FRACTION` (0.5). Pass `enemy["overwhelm"]`.
 - ⚠️ The whole turn is planned **up front** against the party as it stands. A 2-action enemy can be scheduled to hit someone who dies to the first blow; the second lands on a corpse and is absorbed.
+- **Why guard moved out of planning:** a Guard is **single use**, spent by the first blow it soaks. Resolving it at plan time let a 2-action enemy consume the same guard twice, before either hit had landed. `BattleState._run_enemy_turn()` now calls `Targeting.resolve_guard()` per step and clears the guard when it redirects.
 
 ### `actions_for(stamina: int) -> int`
 - Delegates to `Actions.max_for_enemy()`.
@@ -532,12 +535,12 @@ nothing else needs to know how art is stored.
 | `Targeting.threat_of(member)` | `float` |
 | `Targeting.pick_target(party)` / `pick_overwhelm(party)` | `int` (index, or −1) |
 | `Targeting.resolve_guard(i, dmg, guardians)` | `{target, damage}` |
-| `Combat.melee/spell/item/heal/ult_gain(...)` | `int` |
+| `Combat.melee/spell/item/ultimate/heal/ult_gain(...)` | `int` |
 | `Combat.from_character(c)` | `Dictionary` |
 | `Actions.max_for_hero(c)` / `max_for_enemy(sta)` | `int` |
 | `Actions.declare_guard/clear_guard/is_guarding(...)` | `void` / `bool` |
 | `budget.spend(type)` / `can_spend(type)` / `is_spent()` | `bool` |
-| `EnemyAI.plan_turn(enemy, party, guardians, overwhelm)` | `Array` of `{target, damage, redirected}` |
+| `EnemyAI.plan_turn(enemy, party, overwhelm)` | `Array` of `{target, damage, ignores_guard}` |
 | `rating.build(tier_scale)` | `Dictionary` (combatant) |
 | `battle.setup/begin/act/end_turn(...)` | see above |
 | `Transitions.push(path, payload)` / `pop()` / `replace(path, payload)` | `void` (await) |

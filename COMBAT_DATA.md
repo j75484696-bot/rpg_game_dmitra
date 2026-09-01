@@ -410,7 +410,8 @@ than intended.
 - **Results floor, they don't round.** DEF is never worth less than face value.
 
 **Guard** resolves after, via `Targeting.resolve_guard()`: the hit redirects to
-the guardian at **−40%**.
+the guardian at **−40%**. **A guard is single use** — soaking one blow spends
+it. It otherwise lasts until the guardian acts again, or until they fall.
 
 > ⚠️ The damage was already computed against the **original target's** DEF.
 > Redirecting doesn't recompute, so a high-DEF guardian gains nothing from
@@ -431,7 +432,7 @@ clamped to 100 by the caller.
 | **Actions don't bank** | Anything unspent at end of turn is lost |
 | **Guard doesn't end your turn** | A 3-action hero can guard and still attack twice |
 | **One guardian protects one ally** | Declaring again reassigns rather than stacking |
-| **A guardian's own turn clears their guard** | It lasts until they act again |
+| **A guard is spent by the first blow it soaks** | Single use. It otherwise lasts until the guardian acts again |
 | **Speed ties go to the hero** | The party shouldn't lose a race it drew |
 | **Turn order rebuilds each round** | A SPD change mid-fight takes effect next round, not never |
 | **A mutual kill is a loss** | Party wipe is tested first, so a wiped party never sees the victory screen |

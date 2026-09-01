@@ -31,14 +31,14 @@ func actions_for(stamina: int) -> int:
 
 # Returns one entry per action the enemy gets:
 #
-#     { "target": int, "damage": int, "redirected": bool }
+#     { "target": int, "damage": int, "ignores_guard": bool }
 #
-# "target" is the index that actually TAKES the hit, which may not be the index
-# that was picked - Guard redirects to the guardian at reduced damage.
+# "target" is who the enemy INTENDS to hit. Guard is NOT applied here. The whole
+# turn is planned before any of it lands, so resolving guard at plan time would
+# let a 2-action enemy consume the same single-use guard twice. The caller
+# resolves it per action, at the moment each blow is applied.
 # Returns an empty array if the whole party is down.
-#
-# guardians maps guardian_index -> guarded_ally_index (see Targeting).
-func plan_turn(enemy: Dictionary, party: Array, guardians: Dictionary = {}, overwhelm: bool = false) -> Array:
+func plan_turn(enemy: Dictionary, party: Array, overwhelm: bool = false) -> Array:
 	var plan: Array = []
 	var use_overwhelm: bool = overwhelm and _is_wounded(enemy)
 
@@ -47,18 +47,11 @@ func plan_turn(enemy: Dictionary, party: Array, guardians: Dictionary = {}, over
 		if picked == -1:
 			break  # everyone is down; stop planning
 
-		var raw: int = Combat.melee(enemy, party[picked])
-
-		# Overwhelm deliberately ignores Guard - that is the point of it.
-		if use_overwhelm:
-			plan.append({ "target": picked, "damage": raw, "redirected": false })
-			continue
-
-		var guarded: Dictionary = Targeting.resolve_guard(picked, float(raw), guardians)
 		plan.append({
-			"target": int(guarded["target"]),
-			"damage": int(max(1.0, floor(guarded["damage"]))),
-			"redirected": int(guarded["target"]) != picked,
+			"target": picked,
+			"damage": Combat.melee(enemy, party[picked]),
+			# Overwhelm ignores Guard — that is the point of it.
+			"ignores_guard": use_overwhelm,
 		})
 
 	return plan

@@ -245,15 +245,28 @@ func end_turn() -> void:
 
 func _run_enemy_turn(enemy_index: int) -> void:
 	var enemy: Dictionary = enemies[enemy_index]
-	var plan: Array = EnemyAI.plan_turn(enemy, heroes, guards, bool(enemy.get("overwhelm", false)))
+	var plan: Array = EnemyAI.plan_turn(enemy, heroes, bool(enemy.get("overwhelm", false)))
 	for step in plan:
 		if not enemy["alive"] or _party_wiped():
 			break
-		var hit: int = int(step["target"])
-		if step.get("redirected", false):
-			guard_blocked.emit(hit, int(guards.get(hit, hit)), int(step["damage"]))
-		_apply_damage(heroes[hit], int(step["damage"]), hit, true)
-		action_taken.emit(enemy_index, false, Actions.TYPE.MELEE, hit, int(step["damage"]))
+
+		var intended: int = int(step["target"])
+		var hit: int = intended
+		var damage: int = int(step["damage"])
+
+		# Guard is resolved HERE, one blow at a time, so a guard consumed by the
+		# first hit of a 2-action turn is already gone for the second.
+		if not step.get("ignores_guard", false):
+			var resolved: Dictionary = Targeting.resolve_guard(intended, float(damage), guards)
+			hit = int(resolved["target"])
+			damage = int(max(1.0, floor(resolved["damage"])))
+			if hit != intended:
+				guard_blocked.emit(hit, intended, damage)
+				# Single use: soaking a blow spends the guard.
+				Actions.clear_guard(guards, hit)
+
+		_apply_damage(heroes[hit], damage, hit, true)
+		action_taken.emit(enemy_index, false, Actions.TYPE.MELEE, hit, damage)
 		_flush_deaths()
 	turn_ended.emit(enemy_index, false)
 	_advance()
