@@ -44,8 +44,12 @@ const EFFECTIVE_COLOR := Color(1.0, 0.72, 0.35)
 const GUARD_COLOR := Color(0.6, 0.85, 1.0)
 const DOWN_COLOR := Color(1.0, 0.45, 0.45)
 
-# Pulse applied to whichever side is currently clickable.
-const TARGET_TINT := Color(1.35, 1.35, 1.1)
+# Markers shown over valid targets while an action is waiting for one.
+const ICON_DAGGER := preload("res://assets/icons/icon_fight.svg")
+const ICON_SHIELD := preload("res://assets/icons/icon_guard.svg")
+const MARKER_Y := -150.0        # above the head, clear of the HP bar
+const SHIELD_Y := -122.0        # persistent guard sits below the pick marker
+const MARKER_SIZE := 30.0       # on-screen pixels, regardless of character scale
 
 # Hit feedback acts on the SPRITE, not the node — so a shake can never fight
 # whatever else is positioning the combatant.
@@ -84,6 +88,11 @@ var enemy_nodes: Array = []     # one per enemy, index-aligned with battle.enemi
 # Labels currently pulsing, with their tweens, so the glow can be torn down
 # when the turn passes.
 var glow_labels: Array = []
+
+# Transient "pick me" markers, keyed h0..h2 / e0..e3.
+var pick_markers: Dictionary = {}
+# Persistent guard shields, one slot per hero, indexed by the GUARDED hero.
+var guard_shields: Array = []
 
 # Which action is waiting for a target, or -1 when nothing is pending.
 var pending_action: int = -1
@@ -166,6 +175,8 @@ func _build_hero_nodes() -> void:
 		node.get_node("NameLabel").text = str(battle.heroes[i]["name"])
 		_dress(node, str(battle.heroes[i]["name"]), ["hero"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, true))
+		pick_markers[_hero_key(i)] = _make_marker(node, ICON_SHIELD, MARKER_Y)
+		guard_shields.append(_make_marker(node, ICON_SHIELD, SHIELD_Y))
 		hero_nodes.append(node)
 
 func _build_enemy_nodes() -> void:
@@ -181,6 +192,7 @@ func _build_enemy_nodes() -> void:
 		bar.value = int(e.get("hp", bar.max_value))
 		_dress(node, str(e.get("name", "")), ["enemy", "boss"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
+		pick_markers[_enemy_key(i)] = _make_marker(node, ICON_DAGGER, MARKER_Y)
 		enemy_nodes.append(node)
 
 # Give a combatant its idle animation if art exists for it, otherwise leave the
@@ -328,15 +340,62 @@ func _hit_feedback(node: Node2D, super_effective: bool) -> void:
 	shake.tween_property(v, "position:x", 0.0, SHAKE_STEP)
 	v.set_meta("shake", shake)
 
-# Tint whichever side can be clicked right now, so the screen says "pick one of
-# these" without a line of text. clear_only puts everything back.
-func _highlight_targets(want_allies: bool, clear_only: bool = false) -> void:
-	for i in hero_nodes.size():
-		var lit: bool = not clear_only and want_allies and battle.heroes[i]["alive"]
-		_visual_of(hero_nodes[i]).modulate = TARGET_TINT if lit else Color.WHITE
-	for i in enemy_nodes.size():
-		var lit: bool = not clear_only and not want_allies and battle.enemies[i]["alive"]
-		_visual_of(enemy_nodes[i]).modulate = TARGET_TINT if lit else Color.WHITE
+# --- Target markers -------------------------------------------------------
+# A dagger over every enemy while picking an attack, a shield over every ally
+# while picking who to guard. Both vanish on selection. The guard shield then
+# STAYS on whoever was protected, tinted with the guardian's element, until the
+# guard is consumed.
+
+# Characters are scaled (heroes 2.0, enemies 1.75), so a marker parented to one
+# would inherit that. Counter-scale it so markers are the same size on everyone.
+func _make_marker(parent: Node2D, texture: Texture2D, y: float) -> Sprite2D:
+	var marker := Sprite2D.new()
+	marker.texture = texture
+	marker.position = Vector2(0, y)
+	var px: float = float(max(texture.get_width(), 1))
+	marker.scale = Vector2.ONE * (MARKER_SIZE / px) / parent.scale.x
+	marker.visible = false
+	parent.add_child(marker)
+	return marker
+
+# Show pick markers for the action awaiting a target. ITEM and SPELL show
+# nothing yet — neither has anything to target.
+func _show_pick_markers(type: int) -> void:
+	_clear_pick_markers()
+	match type:
+		Actions.TYPE.MELEE, Actions.TYPE.ULT:
+			for i in enemy_nodes.size():
+				pick_markers[_enemy_key(i)].visible = battle.enemies[i]["alive"]
+		Actions.TYPE.GUARD:
+			for i in hero_nodes.size():
+				pick_markers[_hero_key(i)].visible = battle.heroes[i]["alive"]
+
+func _clear_pick_markers() -> void:
+	for key in pick_markers:
+		pick_markers[key].visible = false
+
+func _hero_key(i: int) -> String:
+	return "h%d" % i
+
+func _enemy_key(i: int) -> String:
+	return "e%d" % i
+
+# Persistent guard shields, driven straight off battle.guards rather than from
+# events — so they can never disagree with the fight about who is protected.
+# battle.guards maps guardian -> guarded; the shield goes on the GUARDED hero
+# and takes the GUARDIAN's element colour.
+func _sync_guard_shields() -> void:
+	for shield in guard_shields:
+		shield.visible = false
+	for guardian in battle.guards:
+		var guarded: int = int(battle.guards[guardian])
+		if guarded < 0 or guarded >= guard_shields.size():
+			continue
+		if not battle.heroes[guarded]["alive"]:
+			continue
+		var shield: Sprite2D = guard_shields[guarded]
+		shield.modulate = Elements.color_of(int(battle.heroes[guardian]["element"]))
+		shield.visible = true
 
 # --- Action menu ----------------------------------------------------------
 # ONE menu, re-pointed at whoever is acting. There is no per-hero button set.
@@ -373,9 +432,9 @@ func _on_action_pressed(type: int) -> void:
 	if t.is_empty() or not t["is_hero"]:
 		return
 	pending_action = type
-	# No prompt box. The valid side pulses instead, which says "click here"
-	# where the player is already looking.
-	_highlight_targets(type == Actions.TYPE.GUARD)
+	# No prompt box — a marker appears over each valid target instead, which
+	# says "click one of these" where the player is already looking.
+	_show_pick_markers(type)
 
 func _on_end_turn_pressed() -> void:
 	pending_action = -1
@@ -402,18 +461,18 @@ func _on_combatant_clicked(_viewport: Node, event: InputEvent, _shape: int, inde
 
 	var type := pending_action
 	pending_action = -1
-	# Drop the pulse BEFORE acting. _hit_feedback writes the same modulate and
-	# ends on WHITE, so a highlight left standing would be silently wiped by the
-	# first hit and never restored.
-	_highlight_targets(false, true)
+	_clear_pick_markers()   # the choice is made; the daggers have said their piece
 	battle.act(type, index)
+	_sync_guard_shields()
 
 # --- Reacting to the fight ------------------------------------------------
 
 func on_turn_started(index: int, is_hero: bool) -> void:
 	pending_action = -1
 	_set_turn_glow(index, is_hero)
-	_highlight_targets(false, true)   # clear any leftover pulse
+	_clear_pick_markers()
+	# A guardian's own turn clears their guard, so the shields are re-read here.
+	_sync_guard_shields()
 	_refresh_panels()
 	_refresh_action_menu()
 
@@ -439,6 +498,7 @@ func on_action_taken(actor: int, actor_is_hero: bool, type: int, target: int, am
 			_popup(world_node, "SUPER EFFECTIVE", EFFECTIVE_COLOR, -146.0, 14, 0.85)
 		_hit_feedback(world_node, effective)
 
+	_sync_guard_shields()
 	_refresh_panels()
 	_refresh_enemies()
 	_refresh_action_menu()
@@ -446,6 +506,7 @@ func on_action_taken(actor: int, actor_is_hero: bool, type: int, target: int, am
 func on_combatant_died(index: int, is_hero: bool) -> void:
 	var node: Node2D = hero_nodes[index] if is_hero else enemy_nodes[index]
 	_popup(node, "DOWN", DOWN_COLOR, -130.0, 18, 0.9)
+	_sync_guard_shields()
 	_refresh_panels()
 	_refresh_enemies()
 
@@ -456,7 +517,9 @@ func on_guard_blocked(guardian: int, _guarded: int, _damage: int) -> void:
 func on_battle_ended(party_won: bool) -> void:
 	action_menu.visible = false
 	_clear_turn_glow()
-	_highlight_targets(false, true)
+	_clear_pick_markers()
+	for shield in guard_shields:
+		shield.visible = false
 	# Popping back is the caller's business once a dungeon manager exists.
 	# Standalone, there is nowhere to pop TO, so the result just stays on screen.
 

@@ -7,6 +7,46 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — target markers
+
+### Changed
+Selecting an action now puts a **marker over each valid target** instead of
+tinting the whole side:
+
+| Action | Marker | Lifetime |
+|---|---|---|
+| **FIGHT** / ULT | dagger on every living enemy | until one is chosen |
+| **GUARD** | shield on every living ally | until one is chosen |
+| **ITEM** | *nothing yet* | — |
+| **SPELL** | *nothing yet* | — |
+
+- **The guard shield then persists** on whoever was protected, tinted with the
+  **guardian's element colour**, until the guard clears.
+- Uses the existing `icon_fight.svg` and `icon_guard.svg`, which are white and
+  so tint cleanly.
+
+### Two details worth recording
+- **Markers counter the character's scale.** Heroes render at 2.0 and enemies
+  at 1.75, so a marker parented to one would inherit that and come out
+  different sizes. They are scaled to a fixed 30 on-screen pixels regardless.
+- **Persistent shields are read from `battle.guards`, not from events.** An
+  event-driven shield can drift out of step with the fight — a guard cleared
+  by the guardian's turn or death would leave a shield lying. Syncing from
+  state means the display cannot disagree with the truth.
+
+Verified in-engine: FIGHT marks both enemies and no allies, GUARD marks all
+three allies and no enemies, ITEM and SPELL mark nothing, and guarding Aria
+with Zeph leaves a shield on **Aria** tinted **Wind green** — the guardian's
+element, not the guarded hero's.
+
+### Open question
+"Persist until the guard is consumed" — currently the guard clears on the
+guardian's **next turn** or death, not on the first hit it blocks, so one guard
+can soak several hits in a round. If it should be single-use, that is a
+`BattleState` rule change, not a display one.
+
+---
+
 ## 2026-09-01 — turn cue is an element shine
 
 ### Changed
