@@ -4,6 +4,25 @@ extends Node
 # Every element in the game
 enum E { WATER, FIRE, WIND, EARTH, ICE, LIGHTNING, LAVA, SAND, DARK, LIGHT }
 
+# The colour that IS this element on screen — the turn glow, and whatever spell
+# VFX and icons end up needing. Defined once here so nothing invents its own.
+# Chosen to stay legible against the gold UI frame, so nothing is near #E8B923.
+const COLOR := {
+	E.WATER:     Color("3FA9F5"),
+	E.FIRE:      Color("FF6B35"),
+	E.WIND:      Color("7FE3A8"),
+	E.EARTH:     Color("B07B4A"),
+	E.ICE:       Color("9EDCF0"),
+	E.LIGHTNING: Color("FFE14D"),
+	E.LAVA:      Color("E8482A"),
+	E.SAND:      Color("D9C27A"),
+	E.DARK:      Color("9B6BD6"),
+	E.LIGHT:     Color("FFF6C2"),
+}
+
+func color_of(element: int) -> Color:
+	return COLOR.get(element, Color.WHITE)
+
 # Which slot in a stat array is which. [STA, HP, DEF, ATT, MAG, SPD]
 enum STAT { STA, HP, DEF, ATT, MAG, SPD }
 

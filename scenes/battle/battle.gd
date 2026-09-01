@@ -29,19 +29,15 @@ const ACTIVE_POSITIONS := [
 	Targeting.POS.BACK1,   # threat 10
 ]
 
-# How far the acting character steps toward the enemy, and how far everyone
-# else drifts away. This is the ONLY turn cue - there is no arrow or highlight.
-const STEP_FORWARD := 50.0
-const STEP_BACK := -40.0
-const STEP_TIME := 0.18
+# The turn cue is the actor's name shining in their element colour. Nobody
+# moves — formation is the player's decision and it drives threat, so shuffling
+# combatants to mark a turn fought what the layout is there to say.
+const GLOW_PERIOD := 0.5
 
 # Bars slide to their new value rather than snapping. A 40-damage hit that
 # teleports the bar reads as a glitch; the same hit draining reads as a hit.
 const BAR_DRAIN_TIME := 0.25
 
-# Hit feedback. Both act on the SPRITE, never on the node or slot that does the
-# stepping — two tweens on one position property fight, and the loser's target
-# is where the character stays parked.
 # Floating-text colours. There is no message log — these popups ARE the log.
 const DAMAGE_COLOR := Color(1.0, 0.95, 0.85)
 const EFFECTIVE_COLOR := Color(1.0, 0.72, 0.35)
@@ -51,6 +47,8 @@ const DOWN_COLOR := Color(1.0, 0.45, 0.45)
 # Pulse applied to whichever side is currently clickable.
 const TARGET_TINT := Color(1.35, 1.35, 1.1)
 
+# Hit feedback acts on the SPRITE, not the node — so a shake can never fight
+# whatever else is positioning the combatant.
 const FLASH_TIME := 0.16
 const SHAKE_OFFSET := 7.0
 const SHAKE_STEP := 0.05
@@ -83,9 +81,9 @@ const SHAKE_STEP := 0.05
 var battle: BattleState
 var hero_nodes: Array = []      # one per active hero, parented to its slot
 var enemy_nodes: Array = []     # one per enemy, index-aligned with battle.enemies
-var slot_home: Array = []       # each hero slot's resting x, to step back to
-var enemy_home: Array = []      # same for enemies - never offset from CURRENT
-								# x, or the step accumulates every turn
+# Labels currently pulsing, with their tweens, so the glow can be torn down
+# when the turn passes.
+var glow_labels: Array = []
 
 # Which action is waiting for a target, or -1 when nothing is pending.
 var pending_action: int = -1
@@ -96,8 +94,6 @@ var action_buttons: Dictionary = {}
 # --- Setup ----------------------------------------------------------------
 
 func _ready() -> void:
-	for slot in hero_slots:
-		slot_home.append(slot.position.x)
 
 	action_buttons = {
 		Actions.TYPE.MELEE: buttons.get_node("AttackButton"),
@@ -186,7 +182,6 @@ func _build_enemy_nodes() -> void:
 		_dress(node, str(e.get("name", "")), ["enemy", "boss"])
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
 		enemy_nodes.append(node)
-		enemy_home.append(enemy_slots[i].position.x)
 
 # Give a combatant its idle animation if art exists for it, otherwise leave the
 # placeholder block showing. Art is found by name, so dropping
@@ -247,32 +242,41 @@ func _refresh_enemies(animate: bool = true) -> void:
 # No message log. Everything the player needs to read appears in world, on the
 # thing it happened to, and leaves — see _popup().
 
-# --- The turn cue: step forward, everyone else drifts back -----------------
+# --- The turn cue: the actor's name shines in their element colour ---------
+# Nobody moves. Formation is the player's decision and it drives threat, so
+# shuffling combatants around to mark a turn fought the thing the layout is
+# there to communicate.
 
-func _step(index: int, is_hero: bool) -> void:
-	# Heroes who aren't acting never move - only the current actor steps, and
-	# only they get put back on their saved spot afterward. Resetting everyone
-	# first (a no-op for whoever's already home) keeps that true regardless of
-	# whose turn just ended.
-	_reset_heroes()
-	if not is_hero:
-		# Enemies step too, or their turn has no cue at all - which matters most
-		# on a 2-action enemy, where two hits land with nothing marking who.
-		# Enemies face left, so "forward" is negative x.
-		for i in enemy_nodes.size():
-			var to_x: float = enemy_home[i] + (-STEP_FORWARD if i == index else -STEP_BACK)
-			_slide(enemy_nodes[i].get_parent(), to_x)
-		return
-	_slide(hero_nodes[index].get_parent(), slot_home[index] + STEP_FORWARD)
-	_reset_enemies()
+func _clear_turn_glow() -> void:
+	for entry in glow_labels:
+		var tween = entry["tween"]
+		if tween != null and is_instance_valid(tween):
+			tween.kill()
+		var label: Label = entry["label"]
+		if is_instance_valid(label):
+			label.modulate = Color.WHITE
+	glow_labels.clear()
 
-func _reset_heroes() -> void:
-	for i in hero_nodes.size():
-		_slide(hero_nodes[i].get_parent(), slot_home[i])
+func _set_turn_glow(index: int, is_hero: bool) -> void:
+	_clear_turn_glow()
+	var who: Dictionary = battle.heroes[index] if is_hero else battle.enemies[index]
+	var tint: Color = Elements.color_of(int(who["element"]))
 
-func _reset_enemies() -> void:
-	for i in enemy_nodes.size():
-		_slide(enemy_nodes[i].get_parent(), enemy_home[i])
+	# The world label under the sprite, plus the panel name for heroes — the
+	# panel is where the player reads stats, so it should agree.
+	var labels: Array = []
+	var node: Node2D = hero_nodes[index] if is_hero else enemy_nodes[index]
+	labels.append(node.get_node("NameLabel"))
+	if is_hero and index < hero_panels.size():
+		labels.append(hero_panels[index].get_node("Margin/Rows/NameLabel"))
+
+	for label in labels:
+		# Ping-pong between overbright and merely tinted, so it reads as a
+		# shine rather than a flat recolour. Values above 1.0 bloom.
+		var tween := create_tween().set_loops()
+		tween.tween_property(label, "modulate", tint * 1.7, GLOW_PERIOD)
+		tween.tween_property(label, "modulate", tint * 0.9, GLOW_PERIOD)
+		glow_labels.append({ "label": label, "tween": tween })
 
 # Drive every bar through here. Two hits landing inside the drain window would
 # otherwise leave two tweens fighting over one property, and the bar settles on
@@ -333,11 +337,6 @@ func _highlight_targets(want_allies: bool, clear_only: bool = false) -> void:
 	for i in enemy_nodes.size():
 		var lit: bool = not clear_only and not want_allies and battle.enemies[i]["alive"]
 		_visual_of(enemy_nodes[i]).modulate = TARGET_TINT if lit else Color.WHITE
-
-func _slide(node: Node2D, to_x: float) -> void:
-	var tween := create_tween()
-	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(node, "position:x", to_x, STEP_TIME)
 
 # --- Action menu ----------------------------------------------------------
 # ONE menu, re-pointed at whoever is acting. There is no per-hero button set.
@@ -413,7 +412,7 @@ func _on_combatant_clicked(_viewport: Node, event: InputEvent, _shape: int, inde
 
 func on_turn_started(index: int, is_hero: bool) -> void:
 	pending_action = -1
-	_step(index, is_hero)
+	_set_turn_glow(index, is_hero)
 	_highlight_targets(false, true)   # clear any leftover pulse
 	_refresh_panels()
 	_refresh_action_menu()
@@ -456,7 +455,7 @@ func on_guard_blocked(guardian: int, _guarded: int, _damage: int) -> void:
 
 func on_battle_ended(party_won: bool) -> void:
 	action_menu.visible = false
-	_reset_heroes()
+	_clear_turn_glow()
 	_highlight_targets(false, true)
 	# Popping back is the caller's business once a dungeon manager exists.
 	# Standalone, there is nowhere to pop TO, so the result just stays on screen.

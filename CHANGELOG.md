@@ -7,6 +7,41 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-01 — turn cue is an element shine
+
+### Changed
+- **Nobody steps forward any more.** The acting combatant's **name shines in
+  their element colour** instead — a ping-pong pulse between overbright and
+  tinted, so it reads as a shine rather than a flat recolour.
+- For heroes it glows **both** labels: the one under the sprite and the one on
+  their panel, so the two agree.
+
+Why this is better than the step-forward: **formation is the player's decision
+and it drives threat.** Front draws 50, Center 30, Back1 10. Sliding combatants
+around to mark a turn was actively fighting the thing the layout exists to
+communicate.
+
+### Added
+- **`Elements.COLOR` and `Elements.color_of()`** — the ten element colours,
+  defined once. The turn glow reads from it, and spell VFX and icons should
+  too, so nothing invents its own palette. Chosen to stay legible against the
+  gold UI frame.
+
+### Removed
+`_step()`, `_reset_heroes()`, `_reset_enemies()`, `_slide()`, the three `STEP_*`
+constants, and the `slot_home` / `enemy_home` arrays that existed only to
+support stepping. All of it went; no dead code left behind.
+
+Verified: each hero's glow uses their own element colour (Zeph green/Wind,
+Ignis orange/Fire, Aria blue/Water), two labels pulsing for the acting hero,
+and **nobody moved** across a full glow cycle.
+
+### Docs
+`INTEGRATION_SEAMS.md` gains `Elements.color_of()` and a quick-reference row.
+`COMBAT_DATA.md` records that element colours live in `Elements.COLOR`.
+
+---
+
 ## 2026-09-01 — HUD: information where it happens
 
 The screen carried six boxes and the player had to look away from the fight to

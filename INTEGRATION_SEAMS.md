@@ -204,6 +204,14 @@ Safe to display; change them through the functions above.
 ### `matchup(attacker_element: int, defender_element: int) -> float`
 - **Returns:** `1.5` super effective, `0.5` not effective, `1.0` neutral. The full type chart is in `COMBAT_DATA.md`.
 
+### `color_of(element: int) -> Color`
+- **Returns:** the colour that IS this element on screen. Defined once in
+  `Elements.COLOR` so the turn glow, spell VFX and icons cannot drift apart.
+- **Example:**
+  ```gdscript
+  label.modulate = Elements.color_of(character.element)
+  ```
+
 ### `name_of(element: int) -> String`
 - e.g. `"Water"`. Lowercased, this is also the spell-ID prefix.
 
@@ -517,6 +525,7 @@ nothing else needs to know how art is stored.
 | `char.gain_ult(dealt, taken)` | `void` |
 | `Elements.matchup(a, d)` | `float` (1.5 / 1.0 / 0.5) |
 | `Elements.name_of(e)` | `String` |
+| `Elements.color_of(e)` | `Color` |
 | `Elements.base_stat(e, stat)` | `int` |
 | `Elements.rated_stat(e, stat, rating, scale)` | `int` |
 | `Targeting.is_active(pos)` | `bool` |

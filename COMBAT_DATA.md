@@ -122,6 +122,10 @@ Ten elements. A matchup is **×1.5** super effective, **×0.5** not effective, o
 
 Every other pairing is neutral.
 
+**Each element has a colour**, defined once in `Elements.COLOR`. It drives the
+turn glow — the acting combatant's name shines in their element — and should
+be the source for spell VFX and icons too, so nothing invents its own.
+
 > ⚠️ **Dark and Light are strong against each other**, so that pairing is ×1.5
 > in both directions and never ×0.5. Nothing in the demo uses either element,
 > so it's harmless today — but it's the one asymmetry in the chart.
