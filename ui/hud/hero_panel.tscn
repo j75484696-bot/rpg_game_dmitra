@@ -1,5 +1,26 @@
 [gd_scene format=3 uid="uid://bkdi1psb01nr7"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
+bg_color = Color(0.2, 0.8, 0.2, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_act_fill"]
+bg_color = Color(0.2, 0.5, 0.9, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ult_fill"]
+bg_color = Color(0.5, 0.05, 0.05, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [node name="HeroPanel" type="PanelContainer" unique_id=964003691]
 custom_minimum_size = Vector2(210, 0)
 
@@ -28,6 +49,7 @@ text = "HP"
 custom_minimum_size = Vector2(90, 15)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
 show_percentage = false
 
 [node name="HpValue" type="Label" parent="Margin/Rows/HpRow" unique_id=1035999189]
@@ -45,6 +67,7 @@ text = "ACT"
 custom_minimum_size = Vector2(90, 15)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/fill = SubResource("StyleBoxFlat_act_fill")
 show_percentage = false
 
 [node name="StaminaValue" type="Label" parent="Margin/Rows/StaminaRow" unique_id=1719230423]
@@ -62,4 +85,5 @@ text = "ULT"
 custom_minimum_size = Vector2(90, 15)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/fill = SubResource("StyleBoxFlat_ult_fill")
 show_percentage = false
