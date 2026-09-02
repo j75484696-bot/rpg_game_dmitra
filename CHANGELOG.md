@@ -7,6 +7,38 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-02 — enemy HUD panel, combat UI sizing
+
+### Added
+- **Enemy HUD panel** (`ui/hud/enemy_panel.tscn`) reinstated for Mudling and
+  Wisp — name, HP bar (red), and an action-count bar (purple/navy,
+  placeholder values). This duplicates the HP info the in-world popups
+  already show; kept anyway, at the user's explicit call over that tradeoff.
+- **Panel hides on death.** `_refresh_enemies()` now sets that enemy's HUD
+  panel `visible = false` the moment its `alive` flag flips, rather than
+  leaving it up — the world sprite and hero panels still just dim on death,
+  by design; only the enemy panel disappears outright.
+
+### Changed
+- **Hero panel bars recolored**: HP green, Action blue, Ult dark red.
+- **Enemy HUD panel's HP bar synced to damage taken**, same as the existing
+  over-head bar — was previously static.
+- **Action menu buttons shrunk** (Fight/Items/Guard/Spell/Ultimate/End Turn:
+  180×36 → 136×24, font size 16 → 14), and the `ActionMenu` box resized down
+  repeatedly to hug them instead of leaving dead space around the grid.
+- **Enemy over-head HP bar resized to match the HUD panel's** (90×15 on
+  screen). `Enemy` scales its children ×1.75, so the node's local offsets
+  were set to ~51×9 rather than 90×15 directly, to land on the same rendered
+  size.
+
+### Known tradeoff
+Enemy HP now shows in two places — the HUD panel and the in-world popups.
+This reverses part of the same-day HUD redesign that removed the panel for
+exactly that redundancy; worth reconciling with that decision later rather
+than assuming it was an oversight.
+
+---
+
 ## 2026-09-01 — new battle background
 
 ### Changed

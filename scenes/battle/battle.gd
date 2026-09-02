@@ -266,6 +266,9 @@ func _refresh_enemies(animate: bool = true) -> void:
 		if i >= enemy_panels.size():
 			continue
 		var panel: Control = enemy_panels[i]
+		# The panel itself vanishes on death - unlike the world sprite and hero
+		# panels, which stay visible but dimmed so the player can see who fell.
+		panel.visible = e["alive"]
 		var panel_rows := panel.get_node("Margin/Rows")
 		var panel_hp_bar: ProgressBar = panel_rows.get_node("HpRow/HpBar")
 		panel_hp_bar.max_value = int(e["max_hp"])

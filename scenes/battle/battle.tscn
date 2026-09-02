@@ -38,23 +38,23 @@ z_index = 1
 y_sort_enabled = true
 
 [node name="FrontSlot" type="Marker2D" parent="Heroes" unique_id=2105883562]
-position = Vector2(486, 545)
+position = Vector2(460, 468)
 
 [node name="CenterSlot" type="Marker2D" parent="Heroes" unique_id=220381111]
-position = Vector2(365, 609)
+position = Vector2(295, 588)
 
 [node name="Back1Slot" type="Marker2D" parent="Heroes" unique_id=1907070682]
-position = Vector2(300, 492)
+position = Vector2(287, 395)
 
 [node name="Enemies" type="Node2D" parent="." unique_id=847741869]
 z_index = 1
 y_sort_enabled = true
 
 [node name="Enemy1Slot" type="Marker2D" parent="Enemies" unique_id=636157336]
-position = Vector2(928, 454)
+position = Vector2(859, 412)
 
 [node name="Enemy2Slot" type="Marker2D" parent="Enemies" unique_id=1964061190]
-position = Vector2(826, 550)
+position = Vector2(757, 534)
 
 [node name="Enemy3Slot" type="Marker2D" parent="Enemies" unique_id=1923932309]
 position = Vector2(670, 600)
@@ -133,10 +133,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -400.0
-offset_top = -187.0
-offset_right = -20.0
-offset_bottom = -12.0
+offset_left = -296.0
+offset_top = -178.0
+offset_right = -6.0
+offset_bottom = -10.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -159,35 +159,43 @@ layout_mode = 2
 columns = 2
 
 [node name="AttackButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=33206160]
-custom_minimum_size = Vector2(180, 36)
+custom_minimum_size = Vector2(136, 24)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "FIGHT"
 icon = ExtResource("3")
 
 [node name="ItemButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=1352120539]
-custom_minimum_size = Vector2(180, 36)
+custom_minimum_size = Vector2(136, 24)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "ITEMS"
 icon = ExtResource("4")
 
 [node name="GuardButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=1743914441]
-custom_minimum_size = Vector2(180, 36)
+custom_minimum_size = Vector2(136, 24)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "GUARD"
 icon = ExtResource("5")
 
 [node name="SpellButton" type="Button" parent="Hud/ActionMenu/Margin/Rows/Buttons" unique_id=651580480]
-custom_minimum_size = Vector2(180, 36)
+custom_minimum_size = Vector2(136, 24)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "SPELL"
 icon = ExtResource("6")
 
 [node name="UltButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=39817754]
+custom_minimum_size = Vector2(136, 24)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "ULTIMATE"
 
 [node name="EndTurnButton" type="Button" parent="Hud/ActionMenu/Margin/Rows" unique_id=79984481]
+custom_minimum_size = Vector2(136, 28)
 layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "End turn"
 
 [node name="DamageNumbers" type="Control" parent="Hud" unique_id=2109320924]
