@@ -423,8 +423,8 @@ Verified in-engine:
 
 Verified both directions in-engine rather than by inspection:
 
-    Zeph deals 19  -> ult 9    (19 / 2)
-    Aria takes 40  -> ult 10   (40 / 4)
+	Zeph deals 19  -> ult 9    (19 / 2)
+	Aria takes 40  -> ult 10   (40 / 4)
 
 Ignis and Aria correctly stayed at 0 while Zeph acted.
 
@@ -570,9 +570,9 @@ screen.
 
 All four dungeon enemies now animate:
 
-    Mudling           8 frames      Ashfang    16 frames
-    Frostbite Imp    16 frames      Wisp        8 frames
-    Emberhound       16 frames
+	Mudling           8 frames      Ashfang    16 frames
+	Frostbite Imp    16 frames      Wisp        8 frames
+	Emberhound       16 frames
 
 ### Still placeholder
 - **Critter** and **Brute** — the two remaining encounter enemies.
@@ -655,8 +655,8 @@ All three verified playing in-engine at 16 frames.
 `NAMING.md` specs individual frame files and says nothing about sheets. Strips
 follow the same pattern minus the frame number:
 
-    assets/sprites/characters/<prefix>_<slug>_bidle.png     one row, no padding
-    enemy_frostbite_imp_bidle.png                           spaces -> underscores
+	assets/sprites/characters/<prefix>_<slug>_bidle.png     one row, no padding
+	enemy_frostbite_imp_bidle.png                           spaces -> underscores
 
 ---
 
@@ -710,7 +710,7 @@ first use — it omitted `element`, which `Combat` dereferences.
 - **`core/CreatureRating.gd`** — enemy stats are now DERIVED, not authored.
   A creature is three independent dials:
 
-      stat = round(element base x rating / 10 x tier_scale)
+	  stat = round(element base x rating / 10 x tier_scale)
 
   `ratings[]` is what kind of creature it is, `stat_element` is which numbers
   it scales from, `tier_scale` is how hard this particular fight should be.
