@@ -7,6 +7,58 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-04 — the map and the battle are one loop
+
+Walking the overworld rolls for a fight; the fight runs; finishing it puts the
+player back on the map exactly where they left. **`MAP.md` carries the full
+write-up** — the round trip, the reasoning, and what is deliberately unfinished.
+This entry is the summary.
+
+### Added
+- **The encounter roll fires** (`map.gd`). 1–3 creatures from the Wisp / Critter
+  / Brute pool, each an independent `build()`. Unchanged dials: 240 px walked
+  between rolls, 25% each.
+- **`Transitions.pop(result)` + `scene_resumed`** — the return leg
+  `INTEGRATION_SEAMS.md` had listed as MISSING. Decided in favour of a signal
+  over an M2 dungeon manager, so the map and the fight stay ignorant of each
+  other. `result()` and `can_pop()` came with it.
+- **Stack adoption.** A scene run on its own is in the tree but not on the
+  stack; `push()` now adopts it as the bottom entry, so `pop()` can get back to
+  it. This is what made the encounter safe to switch on.
+- **Directional walk animations.** Eight `Idle_walk_*` sheets, 2×3 grids of 64px
+  cells, replacing the eight single-frame stills. Idle is a *stopped* animation
+  — frame 0 is the rest pose — so no separate idle animation exists.
+- **Critter and Brute idle art**, 12 and 14 frames. Wiring these in was a rename
+  to the `NAMING.md` convention; no code changed.
+
+### Fixed
+- **Combatants were invisible in a pushed fight.** A `Camera2D` sets the
+  viewport's canvas transform and that transform *survives* its scene being
+  hidden and paused, so the fight was drawn through the map camera at
+  `(-976, -1768)`. `CanvasLayer` content has its own transform, which is why
+  background and HUD looked perfectly normal while every combatant sat off
+  screen. Fixed in `Transitions` — it is a property of the stack, not of
+  `battle.tscn`, which needs no camera and did not get one.
+- **Creatures without art could not be attacked.** `Placeholder` is a
+  `ColorRect`, and GUI input resolves before physics picking, so the block ate
+  the click before `ClickArea` saw it. `mouse_filter = IGNORE` on `Placeholder`
+  in `hero.tscn` / `enemy.tscn` and on `HpBar` in `enemy.tscn`.
+
+### Changed
+- **Enemy HUD panels are built per fight**, one per enemy, instead of the two
+  hardcoded MUDLING / WISP panels — an encounter rolls its own pack. Their
+  action bars are live now rather than placeholder values.
+- **`main_scene` is `scenes/map/map.tscn`.** The map is where the game starts.
+- **Prop tiles carry collision** and `ui/themes/main.tres` retouched (map work
+  that predates this loop, folded into the same commit).
+
+### Not done, on purpose
+`xp` is reported and dropped — `Character` has no experience pool. Losing costs
+nothing, because `BattleState` rebuilds every hero at full HP each fight. Both
+are open design decisions, flagged rather than invented. See `MAP.md`.
+
+---
+
 ## 2026-09-02 — enemy HUD panel, combat UI sizing
 
 ### Added
@@ -83,8 +135,8 @@ New battle idles for **Ignis, Aria and Zeph** — 192×192, a **3×3 grid** of
 Verified in-engine — heroes read the grid in the right order and the empty
 slot at (128, 128) is absent, while the enemy strips are untouched:
 
-    Zeph / Ignis / Aria   8 frames  (0,0) (64,0) (128,0) (0,64) … (64,128)
-    Mudling / Wisp        8 frames  (0,0) (64,0) (128,0) … (448,0)
+	Zeph / Ignis / Aria   8 frames  (0,0) (64,0) (128,0) (0,64) … (64,128)
+	Mudling / Wisp        8 frames  (0,0) (64,0) (128,0) … (448,0)
 
 ### Guard against a silent failure
 A sheet of entirely blank cells would leave an animation with no frames, which

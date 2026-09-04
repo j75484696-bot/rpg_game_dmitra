@@ -12,6 +12,17 @@ const SPEED := 120.0
 const ENCOUNTER_CHECK_DISTANCE := 240.0   # pixels walked between rolls
 const ENCOUNTER_CHANCE := 0.25            # chance each time a check fires
 
+# How many creatures a rolled encounter brings. The battle screen has four
+# enemy slots; three is the ceiling here so the HUD column stays readable and
+# a walk across the map cannot open with a wall of four.
+const MIN_ENCOUNTER_SIZE := 1
+const MAX_ENCOUNTER_SIZE := 3
+
+# The map fights on its own ground. battle.tscn already defaults to this art,
+# but the pusher naming it is what lets a dungeon fight later name a different
+# one without battle.gd knowing where the party is.
+const ENCOUNTER_BACKGROUND := "res://assets/sprites/backgrounds/bg_field.png"
+
 # The three lightweight creatures that show up in map encounters. Stats come
 # from the ratings in these files, not from anything hardcoded here. Each
 # build() rolls a fresh element for the matchup.
@@ -34,6 +45,34 @@ const ENCOUNTER_POOL := [
 # that is the point of the bands.
 const BAND_PATHS := ["Layer1", "Layer2", "Layer3"]
 
+# --- Facing animations ------------------------------------------------------
+# One walk sheet per compass direction. Each is a 2x3 grid of 64px cells - six
+# frames, read left-to-right then top-to-bottom, which is the order
+# SpriteSheet.strip_auto() reads a grid in.
+#
+# Frame 0 is the REST pose, which is what the "Idle_" half of the filename
+# means: the sprite holds it while the player is standing still, and the other
+# five are the stride. If a sheet ever ships with the rest pose somewhere else,
+# REST_FRAME is the only thing that has to move.
+#
+# Names match the sector order _facing_from returns, which in turn matches the
+# filenames on disk. These replaced eight single-frame stills (south.png,
+# east.png and friends), which are now unreferenced.
+const FACING_SHEETS := {
+	"south": preload("res://assets/sprites/characters/Idle_walk_south.png"),
+	"south-east": preload("res://assets/sprites/characters/Idle_walk_south-east.png"),
+	"east": preload("res://assets/sprites/characters/Idle_walk_east.png"),
+	"north-east": preload("res://assets/sprites/characters/Idle_walk_north-east.png"),
+	"north": preload("res://assets/sprites/characters/Idle_walk_north.png"),
+	"north-west": preload("res://assets/sprites/characters/Idle_walk_north-west.png"),
+	"west": preload("res://assets/sprites/characters/Idle_walk_west.png"),
+	"south-west": preload("res://assets/sprites/characters/Idle_walk_south-west.png"),
+}
+
+const WALK_CELL := 64      # one frame of a sheet, in pixels
+const WALK_FPS := 10.0
+const REST_FRAME := 0      # the standing pose inside every sheet
+
 @onready var player: CharacterBody2D = %Player
 @onready var sprite: AnimatedSprite2D = %Sprite
 @onready var camera: Camera2D = %Camera
@@ -44,8 +83,12 @@ const BAND_PATHS := ["Layer1", "Layer2", "Layer3"]
 @onready var landmarks: Node2D = $Landmarks
 
 var _travelled := 0.0
-var _facing := "down"
+var _facing := "south"
 var _standing_on: Landmark = null
+# True from the moment a roll succeeds until the fight has been left. The map
+# is paused while the battle is on top, so _physics_process cannot re-roll -
+# but the fade out is a quarter second during which this scene is still live.
+var _in_encounter := false
 
 # --- Layers ---------------------------------------------------------------
 
@@ -59,6 +102,31 @@ func _ready() -> void:
 		if mark is Landmark:
 			mark.body_entered.connect(_on_landmark_entered.bind(mark))
 			mark.body_exited.connect(_on_landmark_exited.bind(mark))
+
+	# An AnimatedSprite2D picks an animation BY NAME, so all eight directions have
+	# to land in one SpriteFrames. SpriteSheet.strip_auto() hands back a
+	# SpriteFrames of its own holding a single animation, so each sheet is sliced
+	# and its frames lifted across under the direction's name. Slicing stays in
+	# SpriteSheet - the grid maths and the blank-cell skipping are not worth
+	# owning twice.
+	var frames := SpriteFrames.new()
+	frames.remove_animation(&"default")
+	for facing_name in FACING_SHEETS:
+		var sliced := SpriteSheet.strip_auto(FACING_SHEETS[facing_name], WALK_CELL, WALK_FPS)
+		frames.add_animation(facing_name)
+		frames.set_animation_loop(facing_name, true)
+		frames.set_animation_speed(facing_name, WALK_FPS)
+		for i in sliced.get_frame_count(SpriteSheet.ANIM):
+			frames.add_frame(facing_name, sliced.get_frame_texture(SpriteSheet.ANIM, i))
+	sprite.sprite_frames = frames
+
+	# Standing, not walking on the spot: the cycle only runs while there is input.
+	sprite.animation = _facing
+	sprite.frame = REST_FRAME
+
+	# The return leg. Connected once here rather than awaited at the push site:
+	# push() returns as soon as the fight is up, not when it is over.
+	Transitions.scene_resumed.connect(_on_scene_resumed)
 
 func _on_stair_entered(body: Node2D, link: StairLink) -> void:
 	if body != player:
@@ -95,8 +163,8 @@ func _on_landmark_exited(body: Node2D, mark: Landmark) -> void:
 func landmark_underfoot() -> Landmark:
 	return _standing_on
 
-# Acting on one is deliberately not wired, for the same reason the encounter
-# roll below is not: the screen it wants does not exist yet. Once
+# Acting on one is deliberately not wired - unlike the encounter roll below,
+# which is now live. What is missing here is the screen itself. Once
 # ui/menus/shop.tscn is in, this is the whole of it:
 #
 #   if Input.is_action_just_pressed("ui_accept") and _standing_on #           and _standing_on.opens:
@@ -113,42 +181,87 @@ func _physics_process(delta: float) -> void:
 	player.move_and_slide()
 
 	if dir == Vector2.ZERO:
-		return  # TODO: play idle bob for _facing
+		# Idle. stop() rewinds to frame 0, which is the rest pose, so letting go
+		# of the keys settles the character rather than freezing them mid-stride.
+		if sprite.is_playing():
+			sprite.stop()
+		return
 
-	_facing = _facing_from(dir)
-	# TODO: play walk animation for _facing
+	var facing := _facing_from(dir)
+	if facing != _facing:
+		_facing = facing
+		sprite.play(_facing)
+	elif not sprite.is_playing():
+		sprite.play(_facing)   # same direction, moving off again after a stop
+
 	_travelled += player.velocity.length() * delta
 	if _travelled >= ENCOUNTER_CHECK_DISTANCE:
 		_travelled = 0.0
 		_roll_encounter()
 
+# 8-way sector matching FACING_SHEETS: split the circle into 45-degree
+# wedges centered on each compass direction, so a mostly-diagonal input still
+# reads as a diagonal sprite instead of snapping to the nearer cardinal.
+const _FACING_ORDER := ["east", "south-east", "south", "south-west", "west", "north-west", "north", "north-east"]
+
 func _facing_from(dir: Vector2) -> String:
-	if abs(dir.x) > abs(dir.y):
-		return "right" if dir.x > 0.0 else "left"
-	return "down" if dir.y > 0.0 else "up"
+	var degrees := rad_to_deg(dir.angle())
+	if degrees < 0.0:
+		degrees += 360.0
+	var sector := int(round(degrees / 45.0)) % _FACING_ORDER.size()
+	return _FACING_ORDER[sector]
 
 # --- Encounters -----------------------------------------------------------
 
 func _roll_encounter() -> void:
-	if randf() >= ENCOUNTER_CHANCE:
+	if _in_encounter or randf() >= ENCOUNTER_CHANCE:
 		return
+	_in_encounter = true
+	# Stop dead. The player is not steering during the fade, and coming back to
+	# a character still sliding reads as a dropped input.
+	player.velocity = Vector2.ZERO
+	Transitions.push(BATTLE_SCENE, {
+		"enemies": _roll_pack(),
+		"background": ENCOUNTER_BACKGROUND,
+	})
 
-	# Everything needed to start the fight now exists:
-	#
-	#   var rating: CreatureRating = load(ENCOUNTER_POOL.pick_random())
-	#   await Transitions.push(BATTLE_SCENE, { "enemies": [rating.build()] })
-	#
-	# Deliberately still commented. The battle scene cannot run a fight or pop
-	# back yet, so pushing would strand the player in an empty screen with no
-	# way home. Uncomment once battle.gd drives a BattleState and pops on
-	# battle_ended.
-	pass
+# A fresh pack, rolled per encounter. Each entry is an independent build(), so
+# two Wisps in one fight are two different Wisps - build() rolls the element
+# for the matchup every time it is called.
+func _roll_pack() -> Array:
+	var pack: Array = []
+	var count := randi_range(MIN_ENCOUNTER_SIZE, MAX_ENCOUNTER_SIZE)
+	for _i in count:
+		var rating: CreatureRating = load(ENCOUNTER_POOL.pick_random())
+		if rating != null:
+			pack.append(rating.build())
+	return pack
 
 # --- Battle handoff -------------------------------------------------------
 # Nothing to store here. Transitions.push() hides and pauses this scene, and
-# Transitions.pop() brings it back exactly as it was - the player's position
-# survives without this scene saving anything.
-#
-# MISSING: the return leg. A finished battle needs to tell the map whether the
-# party won, and what dropped. push() carries a payload in; nothing carries a
-# result back out.
+# Transitions.pop() brings it back exactly as it was - the player stands where
+# they were standing, facing the way they were facing, without this scene
+# saving a thing.
+
+# The fight is over and this scene is on top again. battle.gd reports the
+# outcome through Transitions.pop(); the shape is { party_won: bool, xp: int }.
+# The argument is underscored because nothing here reads it YET - see the note
+# at the bottom of this function. Drop the underscore the moment it is used.
+func _on_scene_resumed(_result: Dictionary) -> void:
+	if Transitions.current() != self:
+		return   # some other scene was popped back to, not this one
+	_in_encounter = false
+	# The odometer restarts, so the player always gets a clear stretch of ground
+	# after a fight rather than walking two steps into the next one.
+	_travelled = 0.0
+
+	# NOT HANDLED YET, and both are deliberate:
+	#
+	#   result["xp"]        nothing consumes it. Character has no experience
+	#                       pool - level_up() is called outright - so there is
+	#                       nowhere to put it until levelling is in.
+	#   result["party_won"] a loss costs nothing. BattleState rebuilds every
+	#                       hero at full HP from Character.max_hp() at the start
+	#                       of each fight, so damage does not survive a battle
+	#                       and a defeat is only a delay. A game over, or wounds
+	#                       that persist, is a decision nobody has made yet.

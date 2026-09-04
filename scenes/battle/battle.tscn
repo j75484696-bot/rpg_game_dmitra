@@ -7,13 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://bfsc75qu4q645" path="res://assets/icons/icon_guard.svg" id="5"]
 [ext_resource type="Texture2D" uid="uid://cv5pj50u3m4ul" path="res://assets/icons/icon_spell.svg" id="6"]
 [ext_resource type="Texture2D" uid="uid://cj4vavtvn471i" path="res://assets/sprites/backgrounds/bg_field.png" id="7"]
-[ext_resource type="PackedScene" uid="uid://b7x8qmqwb40v0" path="res://ui/hud/enemy_panel.tscn" id="8"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_py4tk"]
-bg_color = Color(0.119901486, 0.0870746, 0.33006313, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tyinn"]
-bg_color = Color(0.08627451, 0.10980392, 0.31764707, 1)
 
 [node name="Battle" type="Node2D" unique_id=1706695690]
 script = ExtResource("1")
@@ -95,37 +88,9 @@ anchor_right = 1.0
 offset_left = -225.0
 offset_top = 7.0
 offset_right = -7.0
-offset_bottom = 193.0
+offset_bottom = 375.0
 grow_horizontal = 0
 theme_override_constants/separation = 8
-
-[node name="MudlingPanel" parent="Hud/EnemyPanels" unique_id=1885907739 instance=ExtResource("8")]
-layout_mode = 2
-
-[node name="NameLabel" parent="Hud/EnemyPanels/MudlingPanel/Margin/Rows" index="0"]
-text = "MUDLING"
-
-[node name="ActionBar" parent="Hud/EnemyPanels/MudlingPanel/Margin/Rows/ActionRow" index="1"]
-theme_override_styles/fill = SubResource("StyleBoxFlat_py4tk")
-max_value = 4.0
-value = 4.0
-
-[node name="ActionValue" parent="Hud/EnemyPanels/MudlingPanel/Margin/Rows/ActionRow" index="2"]
-text = "4/4"
-
-[node name="WispPanel" parent="Hud/EnemyPanels" unique_id=1932087388 instance=ExtResource("8")]
-layout_mode = 2
-
-[node name="NameLabel" parent="Hud/EnemyPanels/WispPanel/Margin/Rows" index="0"]
-text = "WISP"
-
-[node name="ActionBar" parent="Hud/EnemyPanels/WispPanel/Margin/Rows/ActionRow" index="1"]
-theme_override_styles/fill = SubResource("StyleBoxFlat_tyinn")
-max_value = 3.0
-value = 3.0
-
-[node name="ActionValue" parent="Hud/EnemyPanels/WispPanel/Margin/Rows/ActionRow" index="2"]
-text = "3/3"
 
 [node name="ActionMenu" type="PanelContainer" parent="Hud" unique_id=797538020]
 anchors_preset = 3
@@ -203,5 +168,3 @@ layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 
-[editable path="Hud/EnemyPanels/MudlingPanel"]
-[editable path="Hud/EnemyPanels/WispPanel"]

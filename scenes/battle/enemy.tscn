@@ -10,6 +10,7 @@ scale = Vector2(1.75, 1.75)
 offset_left = -32.0
 offset_top = -64.0
 offset_right = 32.0
+mouse_filter = 2
 color = Color(0.75, 0.35, 0.35, 1)
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=351382149]
@@ -20,6 +21,7 @@ offset_left = -25.714287
 offset_top = -81.71429
 offset_right = 25.705711
 offset_bottom = -73.134285
+mouse_filter = 2
 show_percentage = false
 
 [node name="NameLabel" type="Label" parent="." unique_id=945296588]

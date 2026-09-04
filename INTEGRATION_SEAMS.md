@@ -455,12 +455,41 @@ Scenes **stack rather than swap**. `push()` leaves the scene below loaded, hidde
 | Call | Effect |
 |---|---|
 | `push(scene_path, payload := {})` | Add a scene on top. `await` it |
-| `pop()` | Drop the top scene; the one beneath resumes untouched. **Refuses to pop the last scene** |
+| `pop(result := {})` | Drop the top scene; the one beneath resumes untouched. **Refuses to pop the last scene** |
 | `replace(scene_path, payload := {})` | Clear the stack and start fresh |
 | `current() -> Node` / `depth() -> int` | — |
+| `can_pop() -> bool` | Whether there is anything underneath to go back to |
 | `payload() -> Dictionary` | What the current scene was pushed with; `{}` if none |
+| `result() -> Dictionary` | What the most recent `pop()` reported; `{}` until something pops with one |
 
-Signals: `transition_started`, `transition_finished`.
+Signals: `transition_started`, `transition_finished`, `scene_resumed(result: Dictionary)`.
+
+### Two things it does for you
+
+Neither needs a line of code in the scene being pushed. That is the point — a
+scene stays stackable without knowing it is on a stack.
+
+**Adoption.** A scene run on its own — `F6` in the editor, or as `main_scene` —
+is in the tree but not on the stack, so its first `push()` would land on top of
+something the stack had never heard of, and `pop()` would then refuse to leave
+(it refuses to pop the last entry). `push()` **adopts** the running scene as the
+bottom entry. It is not reparented: hiding and pausing work wherever it sits.
+
+**The camera.** `push()` takes the viewport away from the outgoing scene and
+resets the canvas transform to identity; `pop()` gives it back and re-applies it
+immediately with `force_update_scroll()`. A scene with no `Camera2D` of its own
+draws at its authored coordinates — exactly how it looks run standalone. A scene
+that *does* bring one gets the viewport, because the previous holder is released
+*before* the incoming scene is instanced.
+
+> ⚠️ **Why the camera is not optional.** A `Camera2D` sets the viewport's canvas
+> transform, and that transform **survives its scene being hidden and paused** —
+> a paused camera stops *updating* the transform, it does not give it up. A
+> fight pushed over the map was drawn through the map camera, offset by
+> `(-976, -1768)`. `CanvasLayer` content has its own transform, so the symptom
+> is specific and badly misleading: **HUD and backgrounds look perfectly normal
+> while every world-space node is off screen.** If you ever see that, this is
+> the cause.
 
 ### Passing data to a scene
 
@@ -476,7 +505,43 @@ var enemies: Array = Transitions.payload().get("enemies", [])
 
 The payload is stacked alongside its scene, so popping restores the payload underneath. It's duplicated on the way in, and it's always safe to read — a scene launched directly just gets `{}`.
 
-> **MISSING: the return leg.** A finished battle needs to report whether the party won, what dropped, and how much XP. `push()` carries data in; nothing carries a result out. Options: `pop(result)` plus a getter, a signal on `Transitions`, or the M2 dungeon manager owning the whole sequence. Open decision.
+### Getting a result back
+
+`pop()` carries a dictionary the other way. **Decided:** `pop(result)` plus the
+`scene_resumed` signal, rather than the other candidate (an M2 dungeon manager
+owning the whole sequence) — this way the map and the fight stay ignorant of
+each other, which is what lets a dungeon push the same battle scene later
+without touching either.
+
+```gdscript
+# the leaving scene
+Transitions.pop({ "party_won": true, "xp": 30 })
+
+# the scene underneath, connected once in _ready()
+Transitions.scene_resumed.connect(_on_resumed)
+
+func _on_resumed(result: Dictionary) -> void:
+    if Transitions.current() != self:
+        return                      # a different scene resumed, not us
+    var won: bool = result.get("party_won", false)
+```
+
+**Connect; don't `await push()`.** `push()` returns as soon as the pushed scene
+is up, *not* when it finishes — so the line after an awaited push runs while the
+fight is still on screen. `scene_resumed` fires after the pop has completed and
+the scene below is visible and running again.
+
+The identity check matters: `scene_resumed` reaches every listener on every pop,
+so a scene that stacks more than one thing must confirm the pop was its own.
+
+**Battle result shape** — what `battle.gd` pops with:
+
+```gdscript
+{ "party_won": bool, "xp": int }     # xp = sum of xp_value over dead enemies
+```
+
+The full write-up of the map → battle → map round trip, including what is
+deliberately not handled yet, is in `MAP.md`.
 
 ---
 
@@ -505,6 +570,12 @@ nothing else needs to know how art is stored.
   $Sprite.sprite_frames = SpriteSheet.strip_auto(tex)
   $Sprite.play(SpriteSheet.ANIM)
   ```
+
+`strip_auto()` is not only for creature idles. `map.gd` runs the eight overworld
+walk sheets through it — each a 2×3 grid of 64px cells — and lifts the frames
+into one `SpriteFrames` under a per-direction animation name, since an
+`AnimatedSprite2D` selects by name. The grid maths and the blank-cell skipping
+stay here rather than being owned twice.
 
 ### Also available
 - `SpriteSheet.strip(texture, cell, count, fps)` — when the count must be
@@ -543,7 +614,8 @@ nothing else needs to know how art is stored.
 | `EnemyAI.plan_turn(enemy, party, overwhelm)` | `Array` of `{target, damage, ignores_guard}` |
 | `rating.build(tier_scale)` | `Dictionary` (combatant) |
 | `battle.setup/begin/act/end_turn(...)` | see above |
-| `Transitions.push(path, payload)` / `pop()` / `replace(path, payload)` | `void` (await) |
-| `Transitions.payload()` | `Dictionary` |
+| `Transitions.push(path, payload)` / `pop(result)` / `replace(path, payload)` | `void` (await) |
+| `Transitions.payload()` / `result()` | `Dictionary` |
+| `Transitions.can_pop()` | `bool` |
 | `SpriteSheet.find_idle(name, prefixes)` | `Texture2D` or `null` |
 | `SpriteSheet.strip_auto(tex, cell, fps)` | `SpriteFrames` |

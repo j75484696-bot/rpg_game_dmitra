@@ -11,9 +11,14 @@ extends Node2D
 const ENEMY_SCENE := preload("res://scenes/battle/enemy.tscn")
 const HERO_SCENE := preload("res://scenes/battle/hero.tscn")
 const DAMAGE_NUMBER := preload("res://scenes/battle/damage_number.tscn")
+# One HUD panel per enemy, built at setup. The fight no longer knows in advance
+# how many enemies it has - a map encounter rolls its own party - so these
+# cannot be authored into the scene the way the three hero panels are.
+const ENEMY_PANEL := preload("res://ui/hud/enemy_panel.tscn")
 
 # Fallback fight when the scene is launched directly rather than pushed with a
-# payload - which is what main_scene does today, so F5 always shows something.
+# payload - F6 on this scene, or a fight opened straight from the editor. The
+# map pushes its own rolled pack, so this list is only ever the standalone case.
 const DEMO_ENEMIES := [
 	"res://data/enemies/mudling.tres",
 	"res://data/enemies/wisp.tres",
@@ -56,6 +61,14 @@ const MARKER_SIZE := 30.0       # on-screen pixels, regardless of character scal
 const PICK_OFFSET := Vector2(0.0, 0.0)
 const SHIELD_OFFSET := Vector2(0.62, -0.55)
 
+# How the fight ends. The banner is held long enough to read before the screen
+# leaves, which is the only thing standing between the last blow and the map.
+const VICTORY_TEXT := "VICTORY"
+const DEFEAT_TEXT := "DEFEAT"
+const VICTORY_COLOR := Color(1.0, 0.9, 0.5)
+const DEFEAT_COLOR := Color(1.0, 0.45, 0.45)
+const BANNER_HOLD := 1.6
+
 # Hit feedback acts on the SPRITE, not the node — so a shake can never fight
 # whatever else is positioning the combatant.
 const FLASH_TIME := 0.16
@@ -78,11 +91,8 @@ const SHAKE_STEP := 0.05
 	$Enemies/Enemy3Slot,
 	$Enemies/Enemy4Slot,
 ]
-# Index-aligned with DEMO_ENEMIES / battle.enemies: Mudling first, Wisp second.
-@onready var enemy_panels: Array = [
-	$Hud/EnemyPanels/MudlingPanel,
-	$Hud/EnemyPanels/WispPanel,
-]
+# The column the per-enemy panels are built into, one per enemy, in order.
+@onready var enemy_panel_box: VBoxContainer = $Hud/EnemyPanels
 @onready var action_menu: PanelContainer = $Hud/ActionMenu
 @onready var actor_label: Label = $Hud/ActionMenu/Margin/Rows/ActorLabel
 @onready var buttons: GridContainer = $Hud/ActionMenu/Margin/Rows/Buttons
@@ -91,10 +101,12 @@ const SHAKE_STEP := 0.05
 @onready var damage_layer: Control = $Hud/DamageNumbers
 @onready var background: TextureRect = $BackgroundLayer/Background
 @onready var vfx: Node2D = $Vfx
+@onready var hud: CanvasLayer = $Hud
 
 var battle: BattleState
 var hero_nodes: Array = []      # one per active hero, parented to its slot
 var enemy_nodes: Array = []     # one per enemy, index-aligned with battle.enemies
+var enemy_panels: Array = []    # HUD panels, index-aligned with enemy_nodes
 # Labels currently pulsing, with their tweens, so the glow can be torn down
 # when the turn passes.
 var glow_labels: Array = []
@@ -205,6 +217,15 @@ func _build_enemy_nodes() -> void:
 		node.get_node("ClickArea").input_event.connect(_on_combatant_clicked.bind(i, false))
 		pick_markers[_enemy_key(i)] = _make_marker(node, ICON_DAGGER, PICK_OFFSET)
 		enemy_nodes.append(node)
+		enemy_panels.append(_build_enemy_panel(str(e.get("name", "ENEMY"))))
+
+# The panel is a copy of ui/hud/enemy_panel.tscn with its name filled in; every
+# number on it is written by _refresh_enemies(), same as the hero panels.
+func _build_enemy_panel(display_name: String) -> Control:
+	var panel: Control = ENEMY_PANEL.instantiate()
+	enemy_panel_box.add_child(panel)
+	panel.get_node("Margin/Rows/NameLabel").text = display_name.to_upper()
+	return panel
 
 # Give a combatant its idle animation if art exists for it, otherwise leave the
 # placeholder block showing. Art is found by name, so dropping
@@ -274,6 +295,17 @@ func _refresh_enemies(animate: bool = true) -> void:
 		panel_hp_bar.max_value = int(e["max_hp"])
 		_set_bar(panel_hp_bar, int(e["hp"]), animate)
 		panel_rows.get_node("HpRow/HpValue").text = "%d/%d" % [int(e["hp"]), int(e["max_hp"])]
+
+		# Actions left this turn. The budget is empty until the enemy's first
+		# turn resets it, so before then the panel shows a full bar rather than
+		# 0/0 - which would read as a stunned enemy instead of a waiting one.
+		var cap: int = int(e["max_actions"])
+		var budget: ActionBudget = e["budget"]
+		var left: int = budget.remaining if budget.max_actions > 0 else cap
+		var act_bar: ProgressBar = panel_rows.get_node("ActionRow/ActionBar")
+		act_bar.max_value = max(1, cap)
+		_set_bar(act_bar, left, animate)
+		panel_rows.get_node("ActionRow/ActionValue").text = "%d/%d" % [left, cap]
 
 # No message log. Everything the player needs to read appears in world, on the
 # thing it happened to, and leaves — see _popup().
@@ -553,8 +585,52 @@ func on_battle_ended(party_won: bool) -> void:
 	_clear_pick_markers()
 	for shield in guard_shields:
 		shield.visible = false
-	# Popping back is the caller's business once a dungeon manager exists.
-	# Standalone, there is nowhere to pop TO, so the result just stays on screen.
+	_show_banner(VICTORY_TEXT if party_won else DEFEAT_TEXT,
+			VICTORY_COLOR if party_won else DEFEAT_COLOR)
+	_leave(party_won)
+
+# Hand the outcome back to whoever pushed this fight, then get off the stack.
+# Nothing here decides what a win or a loss MEANS - that is the pusher's call,
+# and it reads the result off the pop.
+#
+# A fight launched on its own has nothing underneath it, so it holds the banner
+# instead of trying to leave. That keeps F5/F6 on battle.tscn working.
+func _leave(party_won: bool) -> void:
+	await get_tree().create_timer(BANNER_HOLD).timeout
+	if not Transitions.can_pop():
+		return
+	Transitions.pop({
+		"party_won": party_won,
+		"xp": _xp_earned(),
+	})
+
+# XP is reported, not spent. Character has no experience pool yet - level_up()
+# is called outright - so the map takes the number and does nothing with it.
+# When levelling arrives, this is already the value it wants.
+func _xp_earned() -> int:
+	var total: int = 0
+	for e in battle.enemies:
+		if not e["alive"]:
+			total += int(e.get("xp_value", 0))
+	return total
+
+# One line across the middle of the screen. Deliberately not a menu: there is
+# nothing to choose, and a fight that ends should end.
+func _show_banner(text: String, color: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.modulate = color
+	label.add_theme_font_size_override("font_size", 72)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_child(label)
+
+	# Fades up rather than appearing, so it reads as the fight settling.
+	label.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(label, "modulate:a", 1.0, 0.3)
 
 # --- Damage numbers -------------------------------------------------------
 
