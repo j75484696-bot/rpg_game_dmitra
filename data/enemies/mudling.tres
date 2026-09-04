@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CreatureRating" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1ive3fwu6nn3" path="res://core/CreatureRating.gd" id="1_cr"]
+
+[resource]
+script = ExtResource("1_cr")
+display_name = "Mudling"
+stat_element = 3
+rolls_element = false
+ratings = [6.67, 5.83, 3.125, 7.78, 3.33, 7.69]
+xp_value = 15
+overwhelm = false

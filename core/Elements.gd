@@ -4,6 +4,25 @@ extends Node
 # Every element in the game
 enum E { WATER, FIRE, WIND, EARTH, ICE, LIGHTNING, LAVA, SAND, DARK, LIGHT }
 
+# The colour that IS this element on screen — the turn glow, and whatever spell
+# VFX and icons end up needing. Defined once here so nothing invents its own.
+# Chosen to stay legible against the gold UI frame, so nothing is near #E8B923.
+const COLOR := {
+	E.WATER:     Color("3FA9F5"),
+	E.FIRE:      Color("FF6B35"),
+	E.WIND:      Color("7FE3A8"),
+	E.EARTH:     Color("B07B4A"),
+	E.ICE:       Color("9EDCF0"),
+	E.LIGHTNING: Color("FFE14D"),
+	E.LAVA:      Color("E8482A"),
+	E.SAND:      Color("D9C27A"),
+	E.DARK:      Color("9B6BD6"),
+	E.LIGHT:     Color("FFF6C2"),
+}
+
+func color_of(element: int) -> Color:
+	return COLOR.get(element, Color.WHITE)
+
 # Which slot in a stat array is which. [STA, HP, DEF, ATT, MAG, SPD]
 enum STAT { STA, HP, DEF, ATT, MAG, SPD }
 
@@ -55,6 +74,18 @@ const NEUTRAL := 1.0
 func base_stat(element: int, stat: int) -> int:
 	var grade: String = BASE[element][stat]
 	return STAT_SCALE[stat][grade]
+
+# --- Creature ratings -----------------------------------------------------
+# A rating of RATING_BASELINE means "exactly the element's base value", so the
+# 0-20 range spans x0.0 to x2.0. See core/CreatureRating.gd.
+const RATING_BASELINE := 10
+
+# base x rating / baseline x tier_scale, rounded. This is the ONLY place an
+# enemy stat is computed - don't hand-author enemy numbers anywhere.
+# Rating is fractional: 10.0 is the element's base, 4.5 is 45% of it.
+func rated_stat(element: int, stat: int, rating: float, tier_scale: float = 1.0) -> int:
+	var base: float = float(base_stat(element, stat))
+	return int(round(base * rating / float(RATING_BASELINE) * tier_scale))
 
 # Damage multiplier when attacker's element hits defender's element
 func matchup(attacker_element: int, defender_element: int) -> float:

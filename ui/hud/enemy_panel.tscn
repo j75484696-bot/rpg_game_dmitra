@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://b7x8qmqwb40v0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_enemy_hp_fill"]
+bg_color = Color(0.85, 0.15, 0.15, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="EnemyPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(210, 0)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="Rows" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="Margin/Rows"]
+layout_mode = 2
+text = "ENEMY"
+
+[node name="HpRow" type="HBoxContainer" parent="Margin/Rows"]
+layout_mode = 2
+
+[node name="HpTag" type="Label" parent="Margin/Rows/HpRow"]
+layout_mode = 2
+text = "HP"
+
+[node name="HpBar" type="ProgressBar" parent="Margin/Rows/HpRow"]
+custom_minimum_size = Vector2(90, 15)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/fill = SubResource("StyleBoxFlat_enemy_hp_fill")
+show_percentage = false
+
+[node name="HpValue" type="Label" parent="Margin/Rows/HpRow"]
+layout_mode = 2
+text = "0/0"
+
+[node name="ActionRow" type="HBoxContainer" parent="Margin/Rows"]
+layout_mode = 2
+
+[node name="ActionTag" type="Label" parent="Margin/Rows/ActionRow"]
+layout_mode = 2
+text = "ACT"
+
+[node name="ActionBar" type="ProgressBar" parent="Margin/Rows/ActionRow"]
+custom_minimum_size = Vector2(90, 15)
+layout_mode = 2
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="ActionValue" type="Label" parent="Margin/Rows/ActionRow"]
+layout_mode = 2
+text = "0/0"

@@ -1,15 +1,37 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bs57tru3jwkn6"]
 
-[node name="Enemy" type="Node2D"]
+[sub_resource type="RectangleShape2D" id="hit"]
+size = Vector2(56, 64)
 
-[node name="Sprite" type="Sprite2D" parent="."]
+[node name="Enemy" type="Node2D" unique_id=1678335160]
+scale = Vector2(1.75, 1.75)
 
-[node name="ClickArea" type="Area2D" parent="."]
+[node name="Placeholder" type="ColorRect" parent="." unique_id=681660696]
+offset_left = -32.0
+offset_top = -64.0
+offset_right = 32.0
+color = Color(0.75, 0.35, 0.35, 1)
 
-[node name="Collision" type="CollisionShape2D" parent="ClickArea"]
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=351382149]
+offset = Vector2(0, -32)
 
-[node name="HpBar" type="ProgressBar" parent="."]
+[node name="HpBar" type="ProgressBar" parent="." unique_id=290045405]
+offset_left = -25.714287
+offset_top = -81.71429
+offset_right = 25.705711
+offset_bottom = -73.134285
 show_percentage = false
 
-[node name="NameLabel" type="Label" parent="."]
+[node name="NameLabel" type="Label" parent="." unique_id=945296588]
+offset_left = -56.0
+offset_top = 4.0
+offset_right = 56.0
+offset_bottom = 26.0
 text = "ENEMY"
+horizontal_alignment = 1
+
+[node name="ClickArea" type="Area2D" parent="." unique_id=1073515157]
+
+[node name="Collision" type="CollisionShape2D" parent="ClickArea" unique_id=571693274]
+position = Vector2(0, -32)
+shape = SubResource("hit")

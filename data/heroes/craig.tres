@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Character" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://cwbysqggtlmdq" path="res://core/Character.gd" id="1_char"]
+
+[resource]
+script = ExtResource("1_char")
+char_name = "Craig"
+element = 3
+level = 1
+unspent_points = 0
+base_stats = [30, 120, 32, 18, 18, 13]
+growth = [2, 11, 3, 2, 1, 1]
+stat_points = [0, 0, 0, 0, 0, 0]
+position = 3
+unlocked_skills = []
+known_spells = []
+equipped_spells = []

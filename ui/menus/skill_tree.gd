@@ -1,11 +1,12 @@
-# skill_tree.gd — standalone screen. Spend level-up points on skill nodes or raw stats.
-# Scene code: CALLS into core/ but never edits it. See INTEGRATION_SEAMS.md.
+# skill_tree.gd - standalone screen. Spend level-up points on skill nodes or raw stats.
+# Any file may edit any other, provided the docs are kept in step.
+# See INTEGRATION_SEAMS.md for what core/ exposes.
 extends Control
 
 # --- Tree topology --------------------------------------------------------
 # PLACEHOLDER. Prerequisites are a game RULE, so this belongs in core/ or data/,
 # not in a UI script. It lives here only so the screen can draw locked states.
-# unlock_skill() does NOT enforce any of this today — see _try_unlock().
+# unlock_skill() does NOT enforce any of this today - see _try_unlock().
 const PREREQS := {
 	"node_1": [],
 	"node_2": ["node_1"],
@@ -31,7 +32,7 @@ var _hero_index := 0
 # --- Setup ----------------------------------------------------------------
 
 func _ready() -> void:
-	# All four heroes get a tab — the substitute levels up too, so it needs one.
+	# All four heroes get a tab - the substitute levels up too, so it needs one.
 	for member in Party.members:
 		hero_tabs.add_tab(member.char_name)
 	hero_tabs.tab_changed.connect(_on_hero_changed)
@@ -92,9 +93,9 @@ func _on_spend_stat(row_index: int) -> void:
 
 func _try_unlock(skill_id: String) -> void:
 	# BLOCKED: Character.unlock_skill() checks only "has a point" and "not already
-	# taken" — it has no prerequisite logic. The gate below is enforced UI-side,
-	# which contradicts core/ owning the rules. Needs either prereq logic inside
-	# unlock_skill() or a can_unlock(skill_id) seam, agreed first.
+	# taken" - it has no prerequisite logic. The gate below is enforced UI-side,
+	# which means the rule is not in core/ where the other rules live. Needs
+	# either prereq logic inside unlock_skill() or a can_unlock(skill_id) seam.
 	if not _prereqs_met(skill_id, _hero()):
 		return
 	if _hero().unlock_skill(skill_id):

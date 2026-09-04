@@ -1,11 +1,12 @@
 # Combat.gd — Autoload singleton. All damage and healing math, in one place.
 #
 # Pure functions: nothing here holds state or touches the scene tree. Combat
-# code and UI can both call these to get the same number.
+# code and UI can both call these to get the same number. This is the ONE rule
+# that survives the removal of the core/ boundary — never reimplement the
+# formula anywhere else, or the UI and the fight will disagree.
 #
-# Combatants are DICTIONARIES, not Characters — enemies have no class yet, and
-# this matches the convention Targeting already uses. Build one with
-# from_character() for a hero, or by hand from COMBAT_DATA.md for an enemy:
+# Combatants are DICTIONARIES. Build one with from_character() for a hero, or
+# with CreatureRating.build() for an enemy:
 #
 #     { "att": int, "mag": int, "def": int, "element": int }
 extends Node
@@ -55,12 +56,22 @@ func _resolve(raw: float, attacker_element: int, target: Dictionary, use_matchup
 # item table (item_potion is +60 HP), not scaled off MAG.
 
 # Returns the HP actually restored, capped so a potion can't overheal. Use the
-# return value for the floating "+45" so it matches what the bar does.
+# return value for the floating number so it matches what the bar does.
 func heal(value: int, current_hp: int, max_hp: int) -> int:
 	return int(max(0, min(value, max_hp - current_hp)))
 
 # --- Ultimate meter -------------------------------------------------------
 
 # COMBAT_DATA.md: +1 per 2 damage dealt, +1 per 4 damage taken.
+# Returns the GAIN, unclamped. Character.gain_ult() owns clamping to 100.
+# PLACEHOLDER ultimate: a heavy ATT-scaled blow. COMBAT_DATA.md calls for a
+# "placeholder ult" and never defines what it does, so this is the simplest
+# thing that reads as devastating: the normal damage path at 2.5x. It still
+# respects DEF and the element matchup, so no new rules enter the game.
+const ULT_MULTIPLIER := 2.5
+
+func ultimate(attacker: Dictionary, target: Dictionary) -> int:
+	return _resolve(attacker["att"] * ULT_MULTIPLIER, attacker["element"], target, true)
+
 func ult_gain(damage_dealt: int, damage_taken: int) -> int:
 	return int(damage_dealt / 2) + int(damage_taken / 4)

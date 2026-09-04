@@ -1,0 +1,74 @@
+[gd_resource type="Theme" load_steps=8 format=3]
+
+[ext_resource type="FontFile" uid="uid://k2jn5snyd850" path="res://assets/fonts/alagard.ttf" id="1"]
+[ext_resource type="Texture2D" uid="uid://daullp0fpsdss" path="res://assets/ui/ui_panel.png" id="2"]
+
+; One 32x32 frame, 9-sliced at 6,6,6,6. Corners never scale; edges TILE rather
+; than stretch, so with Nearest filtering every pixel stays the same width — a
+; stretched edge at a non-integer factor gives uneven pixel runs.
+; Button states are the same texture re-tinted, so one file covers all of them.
+
+[sub_resource type="StyleBoxTexture" id="panel"]
+texture = ExtResource("2")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxTexture" id="btn_normal"]
+texture = ExtResource("2")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxTexture" id="btn_hover"]
+texture = ExtResource("2")
+modulate_color = Color(1.25, 1.25, 1.15, 1)
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxTexture" id="btn_pressed"]
+texture = ExtResource("2")
+modulate_color = Color(0.72, 0.68, 0.6, 1)
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[sub_resource type="StyleBoxTexture" id="btn_disabled"]
+texture = ExtResource("2")
+modulate_color = Color(0.42, 0.4, 0.38, 0.75)
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[resource]
+default_font = ExtResource("1")
+default_font_size = 16
+Label/font_sizes/font_size = 16
+RichTextLabel/font_sizes/normal_font_size = 16
+PanelContainer/styles/panel = SubResource("panel")
+Panel/styles/panel = SubResource("panel")
+Button/font_sizes/font_size = 16
+Button/colors/font_color = Color(0.16, 0.1, 0.02, 1)
+Button/colors/font_hover_color = Color(0.1, 0.06, 0, 1)
+Button/colors/font_pressed_color = Color(0.16, 0.1, 0.02, 1)
+Button/colors/font_disabled_color = Color(0.35, 0.32, 0.28, 1)
+Button/styles/normal = SubResource("btn_normal")
+Button/styles/hover = SubResource("btn_hover")
+Button/styles/pressed = SubResource("btn_pressed")
+Button/styles/disabled = SubResource("btn_disabled")

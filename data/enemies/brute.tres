@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CreatureRating" load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://b1ive3fwu6nn3" path="res://core/CreatureRating.gd" id="1_cr"]
+
+[resource]
+script = ExtResource("1_cr")
+display_name = "Brute"
+stat_element = 3
+rolls_element = true
+ratings = [9.33, 6.67, 4.375, 10.0, 3.33, 6.15]
+xp_value = 12
+overwhelm = false
