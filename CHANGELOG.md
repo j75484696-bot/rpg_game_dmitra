@@ -140,8 +140,8 @@ Checked rather than assumed. The background is 3:2 against a 16:9 viewport, so
 Detecting the grass line by scanning for the first mostly-green row put it at
 **source y=464 → viewport y=320**, and all seven slots already clear it:
 
-    Front   feet 545   Center  feet 609   Back1   feet 492
-    Enemy1  feet 454   Enemy2  feet 550   Enemy3  feet 600   Enemy4  feet 635
+	Front   feet 545   Center  feet 609   Back1   feet 492
+	Enemy1  feet 454   Enemy2  feet 550   Enemy3  feet 600   Enemy4  feet 635
 
 Every one standing on grass, every head clear of the treeline. The HUD misses
 them too: the action menu occupies x 880–1260 / y 533–708, and Enemy1 at
@@ -439,11 +439,11 @@ before starting, since an interrupted shake can leave the sprite mid-swing.
 Verified in-engine, including that the step-forward still lands on its home x
 after a shake:
 
-    rest        modulate (1,1,1)        x 0.0
-    on hit      modulate (3.0,1.1,1.1)  <- super-effective tint
-    mid-shake   x 1.0                   <- displaced
-    settled     modulate (1,1,1)        x 0.0
-    enemy node  x 890.0 = home 890.0    <- step unaffected
+	rest        modulate (1,1,1)        x 0.0
+	on hit      modulate (3.0,1.1,1.1)  <- super-effective tint
+	mid-shake   x 1.0                   <- displaced
+	settled     modulate (1,1,1)        x 0.0
+	enemy node  x 890.0 = home 890.0    <- step unaffected
 
 That tint fired because Zeph is Wind and Mudling is Earth — the chart driving
 the visual, unprompted.
@@ -478,10 +478,10 @@ the visual, unprompted.
 
 Verified in-engine:
 
-    empty meter   -> act() returns false, 3 actions still unspent
-    charged       -> button enabled, reads "ULTIMATE"
-    fired         -> 70 damage where a normal hit did 19; meter 100 -> 0
-    normal hit    -> meter charges again
+	empty meter   -> act() returns false, 3 actions still unspent
+	charged       -> button enabled, reads "ULTIMATE"
+	fired         -> 70 damage where a normal hit did 19; meter 100 -> 0
+	normal hit    -> meter charges again
 
 ### Docs updated
 `COMBAT_DATA.md` (ult rules + placeholder warning), `INTEGRATION_SEAMS.md`
