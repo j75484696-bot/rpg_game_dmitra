@@ -10,6 +10,25 @@ const CENTER := 1
 const BACK1 := 2
 const BACK2 := 3
 
+# Not in the fight and not the substitute either. A combat slot may be left
+# empty, and only one hero may be the sub, so a four-hero roster can have
+# somebody assigned nowhere. Nothing in combat matches RESERVE, so a reserve
+# hero is simply never built into a battle.
+const RESERVE := -1
+
+# Is this hero placed in one of the three slots that fight?
+func is_fighting(c: Character) -> bool:
+	return c.position in [FRONT, CENTER, BACK1]
+
+# Every hero holding a given slot. Should be 0 or 1 for the combat slots and
+# for BACK2 — the party menu enforces that, nothing else does.
+func members_at(pos: int) -> Array:
+	var out: Array = []
+	for c in members:
+		if c.position == pos:
+			out.append(c)
+	return out
+
 # Numbers live in data/, not here — edit the .tres files to retune a hero.
 # Order is load-bearing: index 0-3 is Ignis, Aria, Zeph, Craig.
 const HERO_FILES := [
