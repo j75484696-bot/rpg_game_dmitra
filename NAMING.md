@@ -319,6 +319,11 @@ sprite per element.
 
 ### UI frames (9-slice)
 
+- **`hero_<slug>_portrait.png`** — party-menu portrait, 64×64. Found by name,
+  the same convention the battle sheets use. A hero with no portrait falls back
+  to their initial on their element colour, so a missing file is obvious rather
+  than blank.
+
 - **`ui_panel.png`** — 32×32, slice margins **6, 6, 6, 6**. One file frames
   every panel, button and log in the game through `ui/themes/main.tres`.
 

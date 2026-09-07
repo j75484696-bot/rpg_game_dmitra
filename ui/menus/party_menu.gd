@@ -87,19 +87,38 @@ func hero_at(pos: int) -> Character:
 	var found: Array = Party.members_at(pos)
 	return found[0] if not found.is_empty() else null
 
-# --- Placeholder portrait -------------------------------------------------
-# The hero's initial on their element colour. No portrait art exists, and this
-# is deliberately obviously temporary — swapping in real art later means
-# replacing the two nodes inside, with no layout change.
+# --- Portrait -------------------------------------------------------------
+# A circular frame in the hero's element colour, holding their portrait art.
+# Falls back to the hero's initial when there is no art for them, so a missing
+# file shows an obvious placeholder rather than an empty circle.
+#
+# Art is found by name, the same convention SpriteSheet uses:
+#     assets/sprites/characters/hero_<slug>_portrait.png
+static func portrait_path(c: Character) -> String:
+	return "res://assets/sprites/characters/hero_%s_portrait.png" % \
+		c.char_name.to_lower().replace(" ", "_")
+
 static func make_portrait(c: Character, size: Vector2) -> Control:
 	var frame := Panel.new()
 	frame.custom_minimum_size = size
+	frame.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW   # keep art inside the circle
 	var box := StyleBoxFlat.new()
 	box.bg_color = Elements.color_of(c.element).darkened(0.35)
 	box.border_color = Elements.color_of(c.element)
 	box.set_border_width_all(2)
 	box.set_corner_radius_all(int(size.x * 0.5))
 	frame.add_theme_stylebox_override("panel", box)
+
+	var path := portrait_path(c)
+	if ResourceLoader.exists(path):
+		var art := TextureRect.new()
+		art.texture = load(path)
+		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_child(art)
+		return frame
 
 	var initial := Label.new()
 	initial.text = c.char_name.substr(0, 1).to_upper()
