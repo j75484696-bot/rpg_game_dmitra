@@ -7,6 +7,42 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-07 — main menu screen, wired to the map
+
+### Added
+- **`ui/menus/main_menu.tscn` + `main_menu.gd`** — title screen with Play,
+  Credits, and Options buttons plus a settings gear icon anchored to the
+  bottom-right corner. Play calls
+  `Transitions.replace("res://scenes/map/map.tscn")` — the exact use
+  `Transitions.gd`'s own doc comment names for main menu → map.
+- **`icon_settings.svg`** — hand-authored placeholder gear icon (8 teeth +
+  a ring), matching the flat `#f2f2f2` style of the existing `icon_fight.svg`
+  / `icon_guard.svg` set, since no gear art existed yet.
+- **`bg_menu.png`** — the Castletot background art, filling the screen via a
+  `TextureRect` with `STRETCH_KEEP_ASPECT_COVERED` so it crops rather than
+  distorts at the project's 1280×720 viewport.
+- **Hover pop on every button** (Play, Credits, Options, the settings gear).
+  Scale tweens up ~8% with a back-out ease on `mouse_entered`, eases back to
+  normal on `mouse_exited`. Centers each button's `pivot_offset` first, since
+  a `Control` otherwise scales from its top-left corner and reads as a
+  lopsided stretch instead of a pop.
+
+### Changed
+- **`main_scene` is `ui/menus/main_menu.tscn`.** The game now boots to the
+  menu instead of straight to the map.
+- **Title font size bumped to 80** (`theme_override_font_sizes` on the
+  `RichTextLabel`) and repositioned top-left, so the game's name actually
+  reads as a title against the background art instead of getting lost in it.
+
+### Not done, on purpose
+Credits and Options/Settings are wired to stub functions
+(`_on_credits_pressed`, `_on_options_pressed`) that do nothing yet — no
+credits system and no settings scene exist. The corner gear and the Options
+button both call the same stub, on the assumption they'll open the same
+settings screen once it's built; flagged rather than assumed silently.
+
+---
+
 ## 2026-09-04 — the map and the battle are one loop
 
 Walking the overworld rolls for a fight; the fight runs; finishing it puts the
