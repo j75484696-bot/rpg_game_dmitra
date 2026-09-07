@@ -303,6 +303,9 @@ sprite per element.
 - **`prop_tree.png`**, **`prop_bush.png`**
 - **`ui_dungeon_marker.png`** (the map entrance icon)
 - **`ui_shop_marker.png`** (the shop's spot on the overworld)
+- **`bg_party.png`** (party menu backdrop — the ten elements). Sits under a
+  ~0.68 black scrim; the art is bright and busy, and unscrimmed text over it is
+  unreadable.
 - **`bg_field.png`** (overworld encounter background — grass and treeline)
 - **`bg_dungeon.png`** (dungeon battle background)
 - `bg_menu.png`, `bg_victory.png`, `bg_defeat.png`
