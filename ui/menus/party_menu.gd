@@ -98,6 +98,16 @@ static func portrait_path(c: Character) -> String:
 	return "res://assets/sprites/characters/hero_%s_portrait.png" % \
 		c.char_name.to_lower().replace(" ", "_")
 
+# Make a subtree invisible to the mouse, so only the drag source or drop target
+# above it ever sees a click. ProgressBar and Panel default to MOUSE_FILTER_STOP
+# and will otherwise swallow the press — which reads as "the card only works if
+# you click between the bars".
+static func pass_through(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		pass_through(child)
+
 static func make_portrait(c: Character, size: Vector2) -> Control:
 	var frame := Panel.new()
 	frame.custom_minimum_size = size
@@ -143,7 +153,7 @@ class HeroCard extends PanelContainer:
 		hero = c
 		menu = owner_menu
 		custom_minimum_size = PartyMenu.CARD_SIZE
-		mouse_filter = Control.MOUSE_FILTER_PASS
+		mouse_filter = Control.MOUSE_FILTER_STOP
 
 		var margin := MarginContainer.new()
 		margin.add_theme_constant_override("margin_left", 8)
@@ -195,6 +205,10 @@ class HeroCard extends PanelContainer:
 			line.add_child(value)
 			_values[spec["stat"]] = value
 
+		# Every child ignores the mouse, so the entire card is one grab area
+		# rather than "works between the bars".
+		PartyMenu.pass_through(margin)
+
 	func refresh() -> void:
 		_level.text = "Lv.%d" % hero.level
 		for spec in PartyMenu.ROWS:
@@ -215,7 +229,8 @@ class HeroCard extends PanelContainer:
 		# A hero standing nowhere is dimmed, like Lyss in the mockup.
 		modulate = Color.WHITE if hero.position != Party.RESERVE else Color(0.5, 0.5, 0.55)
 
-	# Click and hold the card to pick the hero up.
+	# Click and hold anywhere on the card to pick the hero up. Every child is set
+	# to ignore the mouse, so the whole card is one uniform grab area.
 	func _get_drag_data(_at: Vector2) -> Variant:
 		var ghost := PartyMenu.make_portrait(hero, Vector2(56, 56))
 		set_drag_preview(ghost)
@@ -229,23 +244,21 @@ class FormationSlot extends PanelContainer:
 	var slot_label: String
 	var menu: Control
 	var _body: VBoxContainer
-	var _caption: Label
+	# The circle itself. The drop area is this node's rect and nothing else, so
+	# the target on screen is exactly the thing being aimed at.
+	var _circle: Control
 
 	func _init(slot_pos: int, text: String, owner_menu: Control) -> void:
 		pos = slot_pos
 		slot_label = text
 		menu = owner_menu
 		custom_minimum_size = PartyMenu.CIRCLE_SIZE + Vector2(0, 30)
-		mouse_filter = Control.MOUSE_FILTER_PASS
+		mouse_filter = Control.MOUSE_FILTER_STOP
 
 		_body = VBoxContainer.new()
 		_body.alignment = BoxContainer.ALIGNMENT_CENTER
 		_body.add_theme_constant_override("separation", 2)
 		add_child(_body)
-
-		_caption = Label.new()
-		_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_caption.add_theme_font_size_override("font_size", 11)
 
 	func refresh() -> void:
 		for child in _body.get_children():
@@ -262,10 +275,12 @@ class FormationSlot extends PanelContainer:
 			box.set_corner_radius_all(int(PartyMenu.CIRCLE_SIZE.x * 0.5))
 			blank.add_theme_stylebox_override("panel", box)
 			_body.add_child(blank)
+			_circle = blank
 		else:
 			var holder := VBoxContainer.new()
 			holder.alignment = BoxContainer.ALIGNMENT_CENTER
-			holder.add_child(PartyMenu.make_portrait(hero, PartyMenu.CIRCLE_SIZE))
+			_circle = PartyMenu.make_portrait(hero, PartyMenu.CIRCLE_SIZE)
+			holder.add_child(_circle)
 			var who := Label.new()
 			who.text = hero.char_name
 			who.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -278,8 +293,21 @@ class FormationSlot extends PanelContainer:
 		caption.add_theme_font_size_override("font_size", 11)
 		_body.add_child(caption)
 
-	func _can_drop_data(_at: Vector2, data: Variant) -> bool:
-		return data is Dictionary and data.has("hero")
+		# Nothing under the slot competes for the mouse — the slot alone decides.
+		PartyMenu.pass_through(_body)
 
-	func _drop_data(_at: Vector2, data: Variant) -> void:
-		menu.place(data["hero"], pos)
+	# The panel is taller than the circle, because the name and the FRONT/SUB
+	# caption live under it. Accepting a drop anywhere in the panel would mean
+	# dropping on the word "FRONT" counts, which is why it felt inconsistent.
+	# The circle's own rect is the target, nothing more.
+	func _circle_hit(at: Vector2) -> bool:
+		if _circle == null or not is_instance_valid(_circle):
+			return false
+		return Rect2(_circle.global_position, _circle.size).has_point(global_position + at)
+
+	func _can_drop_data(at: Vector2, data: Variant) -> bool:
+		return data is Dictionary and data.has("hero") and _circle_hit(at)
+
+	func _drop_data(at: Vector2, data: Variant) -> void:
+		if _circle_hit(at):
+			menu.place(data["hero"], pos)
