@@ -1,0 +1,143 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://ui/menus/inventory_menu.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dpommgdmrc3fs" path="res://assets/sprites/backgrounds/bg_party.png" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.05, 0.05, 0.08, 0.55)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.909804, 0.72549, 0.137255, 0.65)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="2"]
+bg_color = Color(0.07, 0.07, 0.1, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.909804, 0.72549, 0.137255, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[node name="InventoryMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Scrim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.03, 0.03, 0.05, 0.72)
+
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 44.0
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+text = "INVENTORY"
+
+[node name="Gold" type="Label" parent="Header"]
+layout_mode = 2
+vertical_alignment = 1
+text = "GOLD  0"
+
+[node name="BackButton" type="Button" parent="Header"]
+layout_mode = 2
+text = "BACK"
+
+[node name="Body" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 50.0
+offset_right = -12.0
+offset_bottom = -58.0
+theme_override_constants/separation = 12
+
+[node name="PartyPanel" type="PanelContainer" parent="Body"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("1")
+
+[node name="Column" type="VBoxContainer" parent="Body/PartyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GridPanel" type="PanelContainer" parent="Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("1")
+
+[node name="Grid" type="GridContainer" parent="Body/GridPanel"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 6
+
+[node name="Tabs" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -48.0
+offset_right = -12.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
+
+[node name="Catcher" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Popup" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(244, 0)
+layout_mode = 0
+offset_right = 244.0
+theme_override_styles/panel = SubResource("2")
