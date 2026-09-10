@@ -41,6 +41,7 @@ signal closed
 
 @onready var roster: VBoxContainer = $Roster
 @onready var slot_grid: GridContainer = $FormationArea/Slots
+@onready var back_button: Button = $BackButton
 
 var _cards: Array = []
 var _slots: Array = []
@@ -54,12 +55,45 @@ func _ready() -> void:
 		var card := HeroCard.new(c, self)
 		roster.add_child(card)
 		_cards.append(card)
+	back_button.pressed.connect(_on_back)
+	if embedded:
+		_apply_embed()
 	refresh()
 
 func _unhandled_input(event: InputEvent) -> void:
+	# An embedded page does not answer Escape — the screen holding it does.
+	if embedded:
+		return
 	if event.is_action_pressed("ui_cancel"):
-		closed.emit()
+		_on_back()
 		accept_event()
+
+# --- Embedding ------------------------------------------------------------
+# Shown as a page inside the prep menu, which owns the backdrop and the way
+# out. Only the roster runs to the bottom of the screen, so it is the only
+# thing that has to move clear of the strip the host reserves down there.
+var embedded := false
+var _reserve := 0
+
+func embed(bottom_reserve: int) -> void:
+	embedded = true
+	_reserve = bottom_reserve
+	if is_node_ready():
+		_apply_embed()
+
+func _apply_embed() -> void:
+	$Background.visible = false
+	$Scrim.visible = false
+	back_button.visible = false
+	roster.offset_bottom -= _reserve
+
+# A pushed screen pops; one run on its own — F6, or as main_scene — has nothing
+# underneath, so it only reports that it closed and leaves the decision to
+# whoever is listening. Same shape as skill_menu and inventory_menu.
+func _on_back() -> void:
+	closed.emit()
+	if Transitions.can_pop():
+		Transitions.pop()
 
 func refresh() -> void:
 	for card in _cards:
