@@ -1,0 +1,87 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://ui/menus/prep_menu.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dpommgdmrc3fs" path="res://assets/sprites/backgrounds/bg_party.png" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.05, 0.05, 0.08, 0.72)
+border_width_top = 2
+border_color = Color(0.909804, 0.72549, 0.137255, 0.65)
+
+[node name="PrepMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Scrim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.03, 0.03, 0.05, 0.72)
+
+[node name="Pages" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 1
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -92.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 44.0
+text = "BACK"
+
+[node name="Bar" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -52.0
+theme_override_styles/panel = SubResource("1")
+
+[node name="Row" type="HBoxContainer" parent="Bar"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Caption" type="Label" parent="Bar/Row"]
+layout_mode = 2
+vertical_alignment = 1
+text = "PREPARE"
+
+[node name="Tabs" type="HBoxContainer" parent="Bar/Row"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Spacer" type="Control" parent="Bar/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StartButton" type="Button" parent="Bar/Row"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+text = "START"
