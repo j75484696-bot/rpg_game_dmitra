@@ -7,6 +7,86 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-10 — the menu set, and one screen that pages between them
+
+Skills, inventory, and a prep screen that shows the party, skill and inventory
+screens as three pages over the dungeon you are about to enter. **Nothing opens
+any of them yet** — there is no dungeon scene and no menu key on the map. They
+are built to be wired, and each one still runs on its own with F6.
+
+### Added
+- **`ui/menus/skill_menu.tscn` + `skill_menu.gd`** — SKILLS / SPELLS tabs down
+  the left edge switching one pane. Skills are a 9×3 grid: gold is available,
+  element-coloured is taken, ghosted is locked. Spells are twenty circles laid
+  out serpentine with connector lines, and the lit run of them is exactly how
+  far that hero has learned. Below both, the three equipped-spell slots and a
+  hero row carrying each character's spare points, which is what every band
+  above it redraws for.
+- **`ui/menus/inventory_menu.tscn` + `inventory_menu.gd`** — a 6×5 grid of
+  stacks over the four heroes and their stat bars, with INVENTORY / PARTY /
+  SKILLS tabs along the bottom. Clicking a stack opens the panel of things you
+  can do with it. Driven by `Inventory.items_changed` / `gold_changed`, so a
+  fight or a shop changing the bag redraws it, not just this screen.
+- **`ui/menus/prep_menu.tscn` + `prep_menu.gd`** — the last stop before a run.
+  The three screens above are **instanced and embedded as pages**, not copied,
+  so anything fixed in one is fixed here for free. Reads its backdrop from
+  `Transitions.payload()["background"]`, so one prep screen serves every
+  dungeon.
+- **`embed(bottom_reserve)` on all three page screens.** Hides that screen's own
+  backdrop, BACK button and tab row, lifts its bottom-anchored bands clear of
+  the host's bar, and stops it answering `ui_cancel` — otherwise Escape closes
+  the page rather than the screen the player is looking at. Opt-in: only the
+  prep menu calls it, and all three still stand alone untouched.
+
+### Changed
+- **`party_menu` has a BACK button.** It previously emitted `closed` on Escape
+  and never popped, relying on a listener nothing provides — so once the
+  inventory screen's PARTY tab started pushing it, there was no way out. All
+  four screens now share one shape: pop when pushed, emit `closed` when run
+  standalone.
+- **Skill menu proportions.** Hero cards 150→116, portraits 72→58, equip
+  circles 56→48, spell-tree row gap 22→18. Its bottom bands were too tall to
+  embed — the pane overflowed by ~50px behind the prep bar. Reads better
+  standalone too.
+
+### How START gets wired
+`START` **pops** with `{ "prep_started": true }` rather than pushing the dungeon
+itself. Pushing would leave prep sitting *under* the fight, so walking out of
+the dungeon would drop the player back on a prep screen for a run they already
+made. Popping puts the map back on top, and the map opens the dungeon — which
+is also where the choice of *which* dungeon already lives. `BACK` pops the same
+way with the flag `false`. `map.gd` needs `Transitions.scene_resumed` and three
+lines; the shape is written out at the top of `prep_menu.gd`.
+
+### Blocked, and saying so on screen
+Rather than fake these, the buttons exist and report why they are dead:
+- **Sell** is wired end to end but `SELL_PRICES` is deliberately empty.
+  `COMBAT_DATA.md` lists both *Prices* and *Can you sell?* as TBD and says
+  outright: "Don't wire a price until it's filled in." Filling that one
+  dictionary turns the feature on with no other change.
+- **Use** — `Character` has `max_hp()` and no current HP, so outside a fight
+  there is nothing for a potion to restore. Same reason the party menu draws
+  every HP bar full.
+- **Equip** — `Character` has no equipment field and nothing in `stat()` that
+  would read one. Needs an equipment seam in `core/`.
+- **Skill prerequisites** are enforced UI-side, because `unlock_skill()` checks
+  only "has a point" and "not already taken". The same gap `skill_tree.gd`
+  already carries; a `can_unlock(skill_id)` seam would fix both screens at once.
+
+### Not done, on purpose
+The skill and item catalogues are `const` tables inside their UI scripts. They
+belong in `data/` behind a resource class, next to heroes and enemies — there
+is no item or skill resource class to author them into yet, and `COMBAT_DATA.md`
+has no skill table at all. The item entries are transcribed from its ITEMS
+table for **display only**; no number in either file is used to compute
+anything, so `core/Combat.gd` stays the only place item math happens.
+
+`ui/menus/skill_tree.tscn` is untouched and still there. The party, skill and
+inventory screens are all intended to stay reachable on their own from the
+overworld, so none of them were folded into the prep menu.
+
+---
+
 ## 2026-09-07 — main menu screen, wired to the map
 
 ### Added
