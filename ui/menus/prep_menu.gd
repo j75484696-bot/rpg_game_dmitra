@@ -6,29 +6,18 @@
 # see embed() on each. Anything fixed there is fixed here for free, and the two
 # can never drift apart.
 #
-# NOT WIRED YET. There is no dungeon scene to go to and nothing that opens this
-# screen. Both ends are deliberately left to whoever builds the dungeon:
+# Wired from map.gd: the dungeon scene is pushed FIRST, then this is pushed on
+# top of it as an overlay — Transitions.push(..., true) — so the dungeon is
+# already sitting there, visible and paused, the moment this appears. That is
+# what lets this screen slide itself in and out over real dungeon art instead
+# of fading through black. Leaving, either button, is an overlay pop in turn —
+# it always reveals the dungeon directly underneath. Whether that dungeon then
+# stays (START) or itself pops on to the map (BACK) is dungeon.gd's call, not
+# this screen's; see the "prep_started" branch there.
 #
-#   Opening it, from map.gd:
-#       Transitions.push("res://ui/menus/prep_menu.tscn", {
-#           "background": "res://assets/sprites/backgrounds/bg_dungeon.png",
-#       })
-#
-#   Acting on START, in the same file:
-#       Transitions.scene_resumed.connect(_on_resumed)
-#
-#       func _on_resumed(result: Dictionary) -> void:
-#           if Transitions.current() != self:
-#               return                       # something else resumed, not us
-#           if result.get("prep_started", false):
-#               Transitions.push(DUNGEON_SCENE)
-#
-# START pops rather than pushing the dungeon itself, and that is the whole
-# reason this screen needs to know nothing about dungeons. Pushing would leave
-# prep sitting under the fight, so walking out of the dungeon would land the
-# player back on a prep screen for a run they already made. Popping puts the
-# map back on top, and the map opens the dungeon — which is also where the
-# decision about WHICH dungeon already lives.
+# This screen still knows nothing about dungeons specifically — pushing one
+# scene under another before opening this is entirely map.gd's decision, same
+# as which dungeon it is. All this does is slide.
 class_name PrepMenu
 extends Control
 
@@ -58,15 +47,30 @@ const BOTTOM_RESERVE := 52
 const DUNGEON_BACKGROUND := "res://assets/sprites/backgrounds/bg_dungeon.png"
 const FALLBACK_BACKGROUND := "res://assets/sprites/backgrounds/bg_party.png"
 
-@onready var background: TextureRect = $Background
-@onready var pages_root: Control = $Pages
-@onready var tab_row: HBoxContainer = $Bar/Row/Tabs
-@onready var start_button: Button = $Bar/Row/StartButton
-@onready var back_button: Button = $BackButton
+# How long the slide in/out takes. Same speed both ways so leaving doesn't
+# feel rushed compared to arriving.
+const SLIDE_TIME := 0.35
+
+# Everything - background, scrim, pages, bar, both buttons - lives under
+# Frame, so shrinking or repositioning THAT one node (in the editor, or from a
+# script) resizes and reflows all of it together: every child's anchors are
+# relative to Frame rather than to the screen. Frame is inset from the root by
+# a margin authored in the .tscn (its own offset_left etc.), which is also
+# what leaves the dungeon showing at full brightness outside it - nothing
+# scrims the screen beyond Frame's own edge.
+@onready var frame: Control = $Frame
+@onready var background: TextureRect = $Frame/Background
+@onready var pages_root: Control = $Frame/Pages
+@onready var tab_row: HBoxContainer = $Frame/Bar/Row/Tabs
+@onready var start_button: Button = $Frame/Bar/Row/StartButton
+@onready var back_button: Button = $Frame/BackButton
 
 var _pages: Array = []
 var _tabs: Array = []
 var _page_index := 0
+# Set the moment a button commits to leaving, so a second press mid-slide
+# can't fire the pop twice.
+var _leaving := false
 
 # --- Setup ----------------------------------------------------------------
 
@@ -92,11 +96,38 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start)
 	back_button.pressed.connect(_on_back)
 	show_page(0)
+	_slide_in()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_on_back()
 		accept_event()
+
+# --- Sliding ----------------------------------------------------------------
+# Frame slides in from the right edge and back out the same way, in and out
+# of the root's full-rect - the root itself never moves, only Frame does. Rest
+# position is Frame's OWN current position.x, read before it gets overwritten
+# below - that is whatever inset margin was authored in the .tscn (or set by
+# hand in the editor), so a resize of Frame there needs no matching change
+# here. get_viewport_rect().size.x, not Frame's own width, is the off-screen
+# starting point - the root Control this sits under has no Control parent (it
+# is pushed straight under Transitions' plain Node host) and its size only
+# resolves against the viewport on the NEXT layout pass, too late for the
+# first frame here. Frame's own inset offsets are static and don't have that
+# problem, which is what makes reading its position.x directly safe.
+
+func _slide_in() -> void:
+	var rest_x := frame.position.x
+	frame.position.x = get_viewport_rect().size.x
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(frame, "position:x", rest_x, SLIDE_TIME)
+
+func _slide_out() -> void:
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tween.tween_property(frame, "position:x", get_viewport_rect().size.x, SLIDE_TIME)
+	await tween.finished
 
 # The caller can hand this screen the backdrop of the dungeon it is standing
 # outside, so one prep screen serves every dungeon.
@@ -128,15 +159,27 @@ func current_page() -> Control:
 # --- Leaving --------------------------------------------------------------
 
 func _on_start() -> void:
-	started.emit()
+	if _leaving:
+		return
+	_leaving = true
+	started.emit()   # before the slide, not after - the moment START was pressed
 	# Run standalone — F6, or as main_scene — there is nothing underneath to
 	# hand the result to, so the signal is the whole story.
-	if Transitions.can_pop():
-		Transitions.pop({ "prep_started": true })
+	if not Transitions.can_pop():
+		_leaving = false
+		return
+	await _slide_out()
+	Transitions.pop({ "prep_started": true }, true)
 
 func _on_back() -> void:
+	if _leaving:
+		return
+	_leaving = true
 	closed.emit()
 	# The same pop, without the flag: whoever is underneath sees a prep screen
 	# that was backed out of rather than started.
-	if Transitions.can_pop():
-		Transitions.pop({ "prep_started": false })
+	if not Transitions.can_pop():
+		_leaving = false
+		return
+	await _slide_out()
+	Transitions.pop({ "prep_started": false }, true)

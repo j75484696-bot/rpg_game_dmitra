@@ -110,17 +110,27 @@ func result() -> Dictionary:
 
 # Push a scene on top. The one below stays loaded, hidden and paused.
 # e.g. await Transitions.push("res://scenes/battle/battle.tscn", { "enemies": [] })
-func push(scene_path: String, scene_payload: Dictionary = {}) -> void:
+#
+# overlay skips the black fade AND leaves the scene below visible (still
+# paused) instead of hiding it - for a scene going on top that is not full
+# black-opaque itself and wants to animate in over what is still on screen,
+# e.g. the prep menu sliding on over the dungeon it was pushed from.
+#
+# fade_time overrides FADE_TIME for this one call - a caller with somewhere
+# to be quickly (the dungeon, on the way to a prep screen sliding in right
+# after) can fade faster without changing the pace of every other transition.
+func push(scene_path: String, scene_payload: Dictionary = {}, overlay: bool = false, fade_time: float = FADE_TIME) -> void:
 	if _busy:
 		return
 	_busy = true
 	_adopt_current_scene()
 	transition_started.emit()
-	await _fade_out()
+	if not overlay:
+		await _fade_out(fade_time)
 
 	var below := current()
 	if below:
-		_set_active(below, false)
+		_set_active(below, false, not overlay)
 	# Whatever was driving the viewport belongs to the scene going under. Held
 	# against that scene's slot so pop() can give it back, and released BEFORE
 	# the new scene is instanced - a Camera2D only claims a free viewport, so an
@@ -135,19 +145,23 @@ func push(scene_path: String, scene_payload: Dictionary = {}) -> void:
 	_cameras.append(null)
 	_stack.append(_instance(scene_path))
 
-	await _fade_in()
+	if not overlay:
+		await _fade_in(fade_time)
 	_busy = false
 	transition_finished.emit()
 
 # Drop the top scene. The one beneath resumes exactly where it left off.
-func pop(pop_result: Dictionary = {}) -> void:
+# overlay mirrors push()'s: no black fade, for a scene that animated itself in
+# without one and should animate itself out the same way before this is called.
+func pop(pop_result: Dictionary = {}, overlay: bool = false) -> void:
 	if not can_pop():
 		return
 	_busy = true
 	# Duplicated for the same reason payloads are: the caller keeps its copy.
 	_result = pop_result.duplicate(true)
 	transition_started.emit()
-	await _fade_out()
+	if not overlay:
+		await _fade_out()
 
 	var leaving: Node = _stack.pop_back()
 	_payloads.pop_back()
@@ -155,14 +169,16 @@ func pop(pop_result: Dictionary = {}) -> void:
 	leaving.queue_free()
 
 	# Drop whatever the leaving scene was pointing the viewport at, then give it
-	# back to the scene underneath. Both happen while the screen is still black.
+	# back to the scene underneath. Both happen while the screen is still black -
+	# or, for an overlay pop, while the leaving scene has already animated clear.
 	_release_camera()
 	_set_active(current(), true)
 	if not _cameras.is_empty():
 		_restore_camera(_cameras[_cameras.size() - 1])
 		_cameras[_cameras.size() - 1] = null
 
-	await _fade_in()
+	if not overlay:
+		await _fade_in()
 	_busy = false
 	transition_finished.emit()
 	# Last, so the scene below is already visible and running when it hears.
@@ -251,21 +267,24 @@ func _instance(scene_path: String) -> Node:
 	_host.add_child(scene)
 	return scene
 
-func _set_active(scene: Node, active: bool) -> void:
+# hide_when_inactive false keeps a deactivated scene visible - still paused,
+# just not hidden - for an overlay push where the scene going under is meant
+# to stay on screen behind whatever is animating in over it.
+func _set_active(scene: Node, active: bool, hide_when_inactive: bool = true) -> void:
 	if scene == null:
 		return
-	if scene is CanvasItem:
+	if scene is CanvasItem and (active or hide_when_inactive):
 		scene.visible = active
 	scene.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 
-func _fade_out() -> void:
+func _fade_out(duration: float = FADE_TIME) -> void:
 	_fade.visible = true
 	var tween := create_tween()
-	tween.tween_property(_fade, "modulate:a", 1.0, FADE_TIME)
+	tween.tween_property(_fade, "modulate:a", 1.0, duration)
 	await tween.finished
 
-func _fade_in() -> void:
+func _fade_in(duration: float = FADE_TIME) -> void:
 	var tween := create_tween()
-	tween.tween_property(_fade, "modulate:a", 0.0, FADE_TIME)
+	tween.tween_property(_fade, "modulate:a", 0.0, duration)
 	await tween.finished
 	_fade.visible = false

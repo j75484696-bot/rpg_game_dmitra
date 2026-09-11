@@ -5,6 +5,14 @@ extends Node2D
 
 const BATTLE_SCENE := "res://scenes/battle/battle.tscn"
 
+# --- Dungeon entrance -------------------------------------------------------
+const PREP_MENU_SCENE := "res://ui/menus/prep_menu.tscn"
+const DUNGEON_SCENE := "res://scenes/dungeon/dungeon.tscn"
+# Quicker than Transitions.FADE_TIME (0.25s) - prep_menu starts sliding in the
+# instant this fade finishes, so a snappier fade here is what makes the two
+# feel like one continuous entrance rather than two separate beats.
+const DUNGEON_FADE_TIME := 0.12
+
 # --- Movement: free 8-directional -----------------------------------------
 const SPEED := 120.0
 
@@ -89,6 +97,9 @@ var _standing_on: Landmark = null
 # is paused while the battle is on top, so _physics_process cannot re-roll -
 # but the fade out is a quarter second during which this scene is still live.
 var _in_encounter := false
+# Same idea as _in_encounter: body_entered fires once per approach, but this
+# stops a second push while the fade to the prep menu is still playing out.
+var _entering_dungeon := false
 
 # --- Layers ---------------------------------------------------------------
 
@@ -102,6 +113,7 @@ func _ready() -> void:
 		if mark is Landmark:
 			mark.body_entered.connect(_on_landmark_entered.bind(mark))
 			mark.body_exited.connect(_on_landmark_exited.bind(mark))
+	dungeon_entrance.body_entered.connect(_on_dungeon_entrance_entered)
 
 	# An AnimatedSprite2D picks an animation BY NAME, so all eight directions have
 	# to land in one SpriteFrames. SpriteSheet.strip_auto() hands back a
@@ -173,6 +185,35 @@ func landmark_underfoot() -> Landmark:
 # The Shrine and the Kneeling Stones open nothing. They are there to give the
 # map somewhere to walk to, and to be named.
 
+# --- Dungeon entrance -------------------------------------------------------
+# Unlike the shop, this fires on contact rather than waiting for an interact
+# press - walking under the arch commits you, the same way an encounter does.
+
+func _on_dungeon_entrance_entered(body: Node2D) -> void:
+	if body != player or _entering_dungeon:
+		return
+	_entering_dungeon = true
+	# Stop dead, same reasoning as _roll_encounter: no steering during the fade.
+	player.velocity = Vector2.ZERO
+	# Deferred for the same reason set_entity_band is: body_entered arrives
+	# mid-flush, and this is about to touch the tree.
+	_enter_dungeon.call_deferred()
+
+# The dungeon goes on the stack FIRST, so it is already sitting there the
+# moment prep opens: [ map, dungeon, prep_menu ]. START then only has to pop
+# once to land on the dungeon - no detour back through the map in between.
+# dungeon.gd handles the other leg: BACK has to pop twice, and it is the
+# dungeon scene, not this one, that is in a position to do that second pop.
+func _enter_dungeon() -> void:
+	await Transitions.push(DUNGEON_SCENE, {}, false, DUNGEON_FADE_TIME)
+	# overlay: the dungeon stays on screen, paused, behind prep_menu - which
+	# slides itself in over it rather than the usual fade-through-black.
+	Transitions.push(PREP_MENU_SCENE, {
+		# Keep prep's own shipped backdrop rather than the dungeon's - the
+		# dungeon art belongs to the scene behind it, not to this screen.
+		"background": PrepMenu.FALLBACK_BACKGROUND,
+	}, true)
+
 # --- Traversal ------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
@@ -243,14 +284,14 @@ func _roll_pack() -> Array:
 # they were standing, facing the way they were facing, without this scene
 # saving a thing.
 
-# The fight is over and this scene is on top again. battle.gd reports the
-# outcome through Transitions.pop(); the shape is { party_won: bool, xp: int }.
-# The argument is underscored because nothing here reads it YET - see the note
-# at the bottom of this function. Drop the underscore the moment it is used.
-func _on_scene_resumed(_result: Dictionary) -> void:
+func _on_scene_resumed(result: Dictionary) -> void:
 	if Transitions.current() != self:
 		return   # some other scene was popped back to, not this one
 	_in_encounter = false
+	# Whatever the dungeon run ended in, it is over the moment the map is on
+	# top again - dungeon.gd is what decides whether to keep popping until it
+	# gets here at all.
+	_entering_dungeon = false
 	# The odometer restarts, so the player always gets a clear stretch of ground
 	# after a fight rather than walking two steps into the next one.
 	_travelled = 0.0

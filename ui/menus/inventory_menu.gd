@@ -72,8 +72,12 @@ const DISPLAY_ORDER := ["item_potion", "item_molotov", "item_bomb",
 	"item_grenade", "equip_emberband", "equip_stoneplate"]
 
 # --- Sizes ----------------------------------------------------------------
-
-const CELL := Vector2(144, 108)
+# CELL sized to fit GridPanel at prep_menu's embedded frame size (six columns
+# in roughly 820px of content width once PartyPanel and its own panel margins
+# are out of it — see prep_menu.tscn's Frame node). Run standalone there is
+# far more room than this needs; it is sized to the embedded ceiling, not to
+# fill a full screen.
+const CELL := Vector2(130, 96)
 const HERO_PORTRAIT := Vector2(52, 52)
 const POPUP_WIDTH := 244.0
 
@@ -135,12 +139,15 @@ func _ready() -> void:
 
 # --- Embedding ------------------------------------------------------------
 # Shown as a page inside the prep menu, which owns the backdrop, the way out,
-# and the tabs. This screen's own tab row sits in exactly the strip the host
-# reserves along the bottom, so hiding it is all the room the body needs.
+# and the tabs. Hiding this screen's own tab row frees the strip it sat in,
+# which is not the same size as the host's own reserved strip - Body's bottom
+# offset is reset to the host's reserve rather than left at Tabs' own.
 var embedded := false
+var _reserve := 0
 
-func embed(_bottom_reserve: int) -> void:
+func embed(bottom_reserve: int) -> void:
 	embedded = true
+	_reserve = bottom_reserve
 	if is_node_ready():
 		_apply_embed()
 
@@ -149,6 +156,7 @@ func _apply_embed() -> void:
 	$Scrim.visible = false
 	back_button.visible = false
 	tabs.visible = false
+	$Body.offset_bottom = -_reserve
 
 func _exit_tree() -> void:
 	# The autoload outlives this screen, so a connection left behind would fire

@@ -50,7 +50,7 @@ const SPELL_COLS := 5
 const SPELL_ROWS := 4
 # Room around the tree for the name labels, which hang below each circle and
 # overhang it on both sides.
-const SPELL_MARGIN := Vector2(32, 16)
+const SPELL_MARGIN := Vector2(32, 12)
 
 # The six spells COMBAT_DATA.md actually names. Anything past them is generated
 # by refresh_spells() and has no authored name yet, so it falls back to
@@ -62,12 +62,15 @@ const SPELL_NAMES := {
 }
 
 # --- Sizes ----------------------------------------------------------------
-
-const SKILL_CARD := Vector2(120, 104)
+# Sized to fit Pane and HeroRow at prep_menu's embedded frame size (1108px
+# wide, 340px tall for Pane - see prep_menu.tscn's Frame node). Run standalone
+# (F6, or as main_scene) there is no such ceiling, so these stay comfortably
+# under it with room to spare rather than sized to exactly fill it.
+const SKILL_CARD := Vector2(112, 100)
 const SPELL_NODE := Vector2(68, 68)
-const SPELL_GAP := Vector2(92, 18)
+const SPELL_GAP := Vector2(92, 10)
 const EQUIP_CIRCLE := Vector2(48, 48)
-const HERO_CARD := Vector2(286, 116)
+const HERO_CARD := Vector2(250, 116)
 const HERO_PORTRAIT := Vector2(58, 58)
 
 @onready var rail: VBoxContainer = $Rail
@@ -224,8 +227,8 @@ func try_unlock(tier: int, column: int) -> void:
 func _build_skill_grid() -> GridContainer:
 	var grid := GridContainer.new()
 	grid.columns = SKILL_TIERS[0].size()
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
 	for tier in SKILL_TIERS.size():
 		for column in SKILL_TIERS[tier].size():
 			grid.add_child(SkillCard.new(tier, column, self))

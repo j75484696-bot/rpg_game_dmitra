@@ -7,6 +7,88 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-11 — the dungeon entrance is wired, and the prep menu earns its slide
+
+Walking into the dungeon arch now opens the whole loop: the dungeon goes on
+the stack, the prep menu slides in over it, and either button slides it back
+out — START straight onto the dungeon underneath, BACK on down to the map.
+The dungeon itself is still a bare backdrop with nothing past START; Known
+Inconsistencies' "no way to enter the dungeon" line is closed, "a finished
+battle has nowhere to pop back to" is not touched by this.
+
+### Added
+- **`scenes/dungeon/dungeon.tscn` + `dungeon.gd`** — the dungeon target, still
+  a placeholder: the supplied backdrop art, full screen, nothing else. Listens
+  for its own `scene_resumed` and pops itself when prep_menu closes with
+  `prep_started: false` (BACK), so BACK reaches the map in two pops without
+  `map.gd` having to orchestrate the second one.
+- **`assets/sprites/backgrounds/bg_dungeon.png`** — the first dungeon interior
+  art, filed alongside `bg_field` / `bg_party`.
+- **`Transitions.push()` / `pop()` gain `overlay`.** Skips the black fade and,
+  on push, leaves the scene below visible but paused instead of hiding it —
+  for a scene that wants to animate itself in over what's already on screen
+  rather than fade through black. Nothing else in the project uses it yet, so
+  no existing transition changed.
+- **`Transitions.push()` gains `fade_time`**, a per-call override of the
+  default 0.25s — the map's entry into the dungeon fades in 0.12s so the
+  prep-menu slide that follows reads as one continuous entrance rather than
+  two separate beats, without retuning every other transition in the game.
+- **`prep_menu.tscn` slides.** `Frame` — background, pages, bar, both buttons,
+  all of it — slides in from the right edge on open and back out on either
+  button, tweened, independent of the black-fade system. `map.gd` pushes the
+  dungeon first and the prep menu second as an overlay, so the dungeon is
+  already sitting there the moment the slide starts.
+
+### Changed
+- **`prep_menu.tscn` restructured**: everything but `Scrim` moved under one
+  `Frame` node, inset from the screen edge rather than covering it — the
+  dungeon shows through at full brightness around it. Resizing `Frame` (by
+  hand, in the editor) carries every child — background, pages, bar, both
+  buttons — with it.
+- **Party, Skills and Inventory now share one frame size (1180×670).** They
+  briefly had different sizes — Party fit the original inset, Skills and
+  Inventory needed more room and got it dynamically per tab — which read as a
+  jump switching tabs. Settled on one static size; Skill and Inventory's
+  internal layouts were tightened to actually fit inside it.
+- **Skill menu sizes shrunk to fit embedded**: `SKILL_CARD` 120×104→112×100,
+  `SPELL_GAP` / `SPELL_MARGIN` trimmed, `HERO_CARD` 286×116→250×116, skill
+  grid separation 10→8. Verified with a headless harness that instantiates the
+  real scene and measures the grid and spell tree against the panel's actual
+  content area (post stylebox-margin) rather than by hand — the first pass
+  had the spell tree 4px over on height.
+- **Inventory menu sizes shrunk to fit embedded**: `CELL` 144×108→130×96, grid
+  separation 8→6.
+- **`ui/themes/main.tres` button/panel styles: `axis_stretch` TILE → STRETCH.**
+  The shared `ui_panel.png` 9-patch was repeating across every button's width
+  instead of stretching to fill it — each repeat redrew the texture's own
+  border edge mid-button, which is what read as thin black vertical lines on
+  buttons throughout the game, not just the prep menu. One project-wide fix;
+  set to TILE deliberately back on 2026-08-31, which was the right call for a
+  frame that matched its buttons' width then and stopped matching once button
+  sizing moved on.
+
+### Fixed
+- **`inventory_menu.gd`'s `embed()` silently discarded the reserve it was
+  passed** (`func embed(_bottom_reserve: int)`) — the item grid was never
+  actually kept clear of a host's bottom bar, it just hadn't visibly collided
+  with one before the frame shrank. Now applies it the same way the other two
+  pages do.
+
+### Verified
+Headless, not by eye — a throwaway `SceneTree` script run via
+`--headless --script` instantiated `prep_menu.tscn`, switched through all
+three tabs, and measured the real laid-out sizes against each panel's content
+area. Confirmed all three tabs land on frame size 1180×670 and the skill grid,
+spell tree and item grid all fit their panels with margin to spare. Deleted
+afterward — not committed.
+
+### Not done, on purpose
+The dungeon scene has no way out yet beyond the BACK relay in `dungeon.gd` —
+no button, no script past that. Combat inside it, and everything past START,
+is still open.
+
+---
+
 ## 2026-09-10 — the menu set, and one screen that pages between them
 
 Skills, inventory, and a prep screen that shows the party, skill and inventory
@@ -1220,9 +1302,9 @@ Real, understood, and not yet worth fixing — but don't be surprised by them.
 - **Dark and Light are strong against each other**, so that pairing is ×1.5
   both ways and the ×0.5 branch is unreachable for it. Nothing in the demo
   uses either element.
-- **`skill_tree.gd`'s back button and `map.gd`'s dungeon entrance are never
-  connected.** There is no way to leave the skill tree, and no way to enter
-  the dungeon. A finished battle also has nowhere to pop back to.
+- **`skill_tree.gd`'s back button is still never connected.** There is no way
+  to leave the skill tree. (The dungeon entrance is wired as of 2026-09-11; a
+  finished battle still has nowhere to pop back to.)
 - **`TurnIndicator` is still an empty node no script references.** The turn cue
   is the step-forward instead, so it may simply not be needed.
 - The battle reference shows a **global** burst gauge; the build has a per-hero
