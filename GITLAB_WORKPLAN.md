@@ -174,9 +174,26 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | STRETCH: minimal save/load OR pull 1 Later item | Coders | type::feature, team::code, area::infra, priority::nice |
 
 
-## 🔁 Suggested Board Columns
+## 🔁 Board Columns
 
-`To Do` → `Doing` → `In Review` (open MR) → `Bug` → `Done`. Map these to the `status::` labels or just use list columns.
+The **Development** board has one list per `status::` label: `Open` → `status::todo` → `status::doing` → `status::review` → `status::blocked` → `Closed`. Dragging a card between columns swaps its `status::` label, so the label and the board never disagree.
+
+
+## 🏷️ Labelling Convention
+
+Every issue is labelled **when it is created**, not retroactively. The `::` scopes are one-per-issue.
+
+| Scope | Required on | Pick |
+| --- | --- | --- |
+| `type::` | every issue | What kind of work it is (feature / asset / audio / bug / qa / design / setup) |
+| `area::` | every issue | Which part of the game it touches |
+| `priority::` | open issues | must = slice fails without it · should = cut only if desperate · nice = stretch |
+| `status::` | open issues | Starts at `status::todo`; move the card on the board to change it |
+| `team::` | open issues | Follows the assignee, not the task — a playtest assigned to a coder is `team::code` |
+
+Closed issues keep `type::` + `area::` for board history and reporting; `priority::` / `status::` / `team::` are not maintained after close.
+
+New issue → copy the four labels from the matching row in the milestone tables above, add `status::todo`, assign, set the milestone. Anything with no row is new scope — decide `priority::` with the team before it goes on the board.
 
 
 ## 📥 How to load this into GitLab
