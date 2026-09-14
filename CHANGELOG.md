@@ -7,6 +7,47 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-14 — the dungeon entrance gets its marker (#111)
+
+The arch on the summit now has an icon over it, so the way into the dungeon
+can be seen from across the map rather than found by walking into it. Closes
+the art side of the entrance; the trigger underneath is unchanged.
+
+### Added
+- **`assets/sprites/markers/marker_dungeon.png`** — 32×48, an amber
+  down-arrow over a stone-rimmed cave mouth, in the tileset's palette. First
+  asset under a new `markers/` folder; `NAMING.md` gains the `marker_<place>`
+  row for it.
+- **`map.gd` bobs the marker** — `_start_marker_bob()`, a looping sine tween
+  of 3px over 1.2s, started in `_ready()`. Bound to the map node, so it
+  pauses with the map under a fight or the prep menu. Code motion, not
+  frames, per the hover rule in `NAMING.md`.
+
+### Changed
+- **`map.tscn`** — the empty `Interactables/DungeonEntrance/Marker` sprite
+  now carries the texture, sits at `(0, -56)` so it floats over the arch, and
+  is a `%Marker` unique name. `DungeonEntrance` gets `z_index = 30`:
+  `Interactables` is at 0, under every band, so anything drawn there was
+  invisible behind the Layer1 ground. The `Prompt` child inherits the same
+  lift for when it gets content.
+- **`MAP.md`** — the entrance paragraph and the test log line say what the
+  marker is and why the z_index is there.
+
+### Verified
+Headless, not by eye — a throwaway check scene run as the main scene (so the
+autoloads `map.gd` needs were up; `--script` mode skips them) instantiated
+`map.tscn`, read back `z_index = 30`, the texture path, and the rest position,
+then sampled the marker's y at 0.35s (risen ~1.9px) and 1.25s (back within
+0.05px of rest). Deleted afterward — not committed. The PNG itself was
+eyeballed at 6× before filing.
+
+### Not done, on purpose
+`Prompt` is still empty and hidden — what the entrance says on approach, if
+anything, is a separate ticket. The entrance is still a plain `Area2D`, not a
+`Landmark`.
+
+---
+
 ## 2026-09-11 — the dungeon entrance is wired, and the prep menu earns its slide
 
 Walking into the dungeon arch now opens the whole loop: the dungeon goes on

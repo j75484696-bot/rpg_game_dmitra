@@ -134,6 +134,12 @@ The **dungeon entrance** is separate, under `Interactables`, and is still a bare
 wall, two flights up from spawn. It could adopt the same script; nobody has
 needed it to yet.
 
+Its `Marker` child shows `marker_dungeon.png` (an amber arrow over a cave
+mouth) 56px above the trigger, so it floats over the arch rather than sitting
+in the doorway. `map.gd` bobs it 3px on a looping tween. `DungeonEntrance`
+carries `z_index = 30` for this: `Interactables` is at 0, below every band, so
+without it the marker would draw under the Layer1 ground.
+
 Spawn is tile **(50, 66)**, on the southern approach. The camera is limited to
 the map bounds.
 
@@ -193,8 +199,8 @@ Shop/Shrine/Stones: underfoot yes -> null on walking off
 shop wall:    stopped at y=2302 (face 2272-2304)      dungeon arch: overlapping = true
 ```
 
-`DungeonEntrance` still needs nothing further; `Interactables/DungeonEntrance`
-has its shape.
+`Interactables/DungeonEntrance` has its shape and its marker; `Prompt` is
+still an empty, hidden `Node2D`.
 
 ---
 

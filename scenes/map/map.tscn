@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://2h7t30pqqiu2" path="res://scenes/map/landmark.gd" id="10_mark"]
 [ext_resource type="Texture2D" uid="uid://cmu0cldlqvt01" path="res://assets/tilesets/TX Plant with Shadow.png" id="10_mgs8m"]
 [ext_resource type="Texture2D" uid="uid://boqg30ifmjvdg" path="res://assets/tilesets/TX Props with Shadow.png" id="11_mrjnl"]
+[ext_resource type="Texture2D" uid="uid://fiqbadiilpvj" path="res://assets/sprites/markers/marker_dungeon.png" id="12_marker"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grass"]
 texture = ExtResource("2_grass")
@@ -1383,9 +1384,13 @@ shape = SubResource("RectangleShape2D_spot")
 
 [node name="DungeonEntrance" type="Area2D" parent="Interactables" unique_id=881560194]
 unique_name_in_owner = true
+z_index = 30
 position = Vector2(1600, 208)
 
 [node name="Marker" type="Sprite2D" parent="Interactables/DungeonEntrance" unique_id=601223939]
+unique_name_in_owner = true
+position = Vector2(0, -56)
+texture = ExtResource("12_marker")
 
 [node name="Collision" type="CollisionShape2D" parent="Interactables/DungeonEntrance" unique_id=1395962166]
 shape = SubResource("RectangleShape2D_door")
