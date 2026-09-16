@@ -9,8 +9,6 @@ texture_margin_left = 6.0
 texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
-axis_stretch_horizontal = 0
-axis_stretch_vertical = 0
 modulate_color = Color(0.42, 0.4, 0.38, 0.75)
 
 [sub_resource type="StyleBoxTexture" id="btn_hover"]
@@ -19,8 +17,6 @@ texture_margin_left = 6.0
 texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
-axis_stretch_horizontal = 0
-axis_stretch_vertical = 0
 modulate_color = Color(1.25, 1.25, 1.15, 1)
 
 [sub_resource type="StyleBoxTexture" id="btn_normal"]
@@ -29,8 +25,6 @@ texture_margin_left = 6.0
 texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
-axis_stretch_horizontal = 0
-axis_stretch_vertical = 0
 
 [sub_resource type="StyleBoxTexture" id="btn_pressed"]
 texture = ExtResource("2")
@@ -38,8 +32,6 @@ texture_margin_left = 6.0
 texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
-axis_stretch_horizontal = 0
-axis_stretch_vertical = 0
 modulate_color = Color(0.72, 0.68, 0.6, 1)
 
 [sub_resource type="StyleBoxTexture" id="panel"]
@@ -48,8 +40,6 @@ texture_margin_left = 6.0
 texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
-axis_stretch_horizontal = 0
-axis_stretch_vertical = 0
 
 [resource]
 default_font = ExtResource("1")
