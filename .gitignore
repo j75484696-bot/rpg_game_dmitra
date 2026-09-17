@@ -11,6 +11,7 @@ build/
 builds/
 export/
 exports/
+public/
 *.exe
 *.pck
 *.zip
@@ -20,7 +21,7 @@ exports/
 
 # ========== SECRETS ==========
 # Export presets can hold signing keys / passwords — keep the local one out
-export_presets.cfg
+# export_presets.cfg — tracked: no keys or passwords in this project's presets
 
 # ========== C# / MONO (only if you add C#, harmless otherwise) ==========
 .mono/
