@@ -43,6 +43,9 @@ pages:
   needs: [export-web]
   script:
     - mv build/web public
+    # COOP/COEP headers. Not needed while variant/thread_support=false in the
+    # preset, but harmless, and required the day threads are switched on.
+    - cp _headers public/_headers
   artifacts:
     paths: [public]
   rules:
