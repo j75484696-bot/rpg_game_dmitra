@@ -24,8 +24,9 @@ res://
 │   ├── ActionBudget.gd       class_name — one combatant's actions, one turn
 │   ├── BattleState.gd        class_name — one fight, start to finish
 │   └── SpriteSheet.gd        class_name — slices a strip into SpriteFrames
-├── tools/                    Editor-run scripts, not shipped
-│   └── gen_frame.gd          regenerates assets/ui/ui_panel.png
+├── tools/                    Editor/CI-run scripts, not shipped
+│   ├── gen_frame.gd          regenerates assets/ui/ui_panel.png
+│   └── ci_check_scripts.gd   compiles every .gd; the CI `check` job
 ├── data/                     Authored game data (.tres)
 │   ├── heroes/               ignis, aria, zeph, craig — Character instances
 │   └── enemies/              7 CreatureRating instances (6 + boss)
@@ -50,6 +51,10 @@ res://
 
 `assets/` is still empty — art production is waiting on the base-resolution
 decision.
+
+Two root files that aren't Godot's own: `.gitlab-ci.yml` is the pipeline
+(check + Web export, see `README.md`), and `export_presets.cfg` is committed
+because that pipeline exports from it.
 
 ## Where does a new file go?
 

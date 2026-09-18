@@ -63,6 +63,7 @@ Labels use `scope::name` grouping. If you're on GitLab Free the `::` is just a n
 | Work Item | Assignee | Labels |
 | --- | --- | --- |
 | Create GitLab repo + commit .gitignore first | Coder A | type::setup, team::code, area::infra, priority::must |
+| CI pipeline: script check + Web export + Pages on `prototype` | Coder A | type::setup, team::code, area::infra, priority::should |
 | Set folder structure + register autoloads | Coder A | type::setup, team::code, area::infra, priority::must |
 | Import core systems (Elements/Character/Party/Targeting) | Coder A | type::setup, team::code, area::infra, priority::must |
 | Write Integration Seams doc | Coder A | type::design, team::code, area::infra, priority::must |
