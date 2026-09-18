@@ -46,7 +46,7 @@ was whatever someone last exported by hand into `build/`.
 - **`.gitlab-ci.yml`** — three jobs on `barichello/godot-ci:4.7.2`: `check`
   (import + compile every `.gd`), `export-web` (headless Web export, kept as a
   one-week artifact), `pages` (`prototype` only, publishes the export to
-  `https://nabiasjones1.gitlab.io/rpg_game_dmitra/`).
+  `https://rpg-game-dmitra-e70d30.gitlab.io/`, sign-in required).
 - **`tools/ci_check_scripts.gd`** — SceneTree runner that `load()`s every `.gd`
   under `res://` from `_initialize()`, after the autoloads are registered, and
   exits 1 if any fails. Replaces `godot --check-only -s`, which never registers

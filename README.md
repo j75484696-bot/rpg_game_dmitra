@@ -51,8 +51,10 @@ Every push runs [`.gitlab-ci.yml`](.gitlab-ci.yml):
   week. On a merge request, *Pipelines → export-web → Browse* gets you a
   playable build without opening the editor.
 - **pages** — on `prototype` only, publishes that export to
-  <https://nabiasjones1.gitlab.io/rpg_game_dmitra/>. `main` stays the branch
-  merge requests target; `prototype` is what drives the live URL.
+  <https://rpg-game-dmitra-e70d30.gitlab.io/>. The site is private like the
+  repo: you sign in to GitLab to open it, so it's for the team, not outside
+  playtesters. `main` stays the branch merge requests target; `prototype` is
+  what drives the live URL.
 
 The export reads `export_presets.cfg`, which is committed for that reason.
 It's a single unsigned Web preset — if you add a signed preset (Android/iOS),
