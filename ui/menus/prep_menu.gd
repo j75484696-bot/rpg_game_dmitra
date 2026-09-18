@@ -71,11 +71,22 @@ var _page_index := 0
 # Set the moment a button commits to leaving, so a second press mid-slide
 # can't fire the pop twice.
 var _leaving := false
+# True on every prep screen but the first: dungeon.gd sets payload "hide_back"
+# on every reopen between levels, because bailing out mid-run isn't allowed
+# once the first enemy is down. Read once here rather than re-checked per
+# input, so BACK's visibility and Escape's behaviour can never disagree.
+var _back_hidden := false
 
 # --- Setup ----------------------------------------------------------------
 
 func _ready() -> void:
 	_load_background()
+
+	_back_hidden = bool(Transitions.payload().get("hide_back", false))
+	back_button.visible = not _back_hidden
+	# START only reads right for the run that hasn't begun yet; every reopen
+	# after that is resuming one already underway.
+	start_button.text = "CONTINUE" if _back_hidden else "START"
 
 	for spec in PAGES:
 		var page: Control = load(spec["scene"]).instantiate()
@@ -99,6 +110,8 @@ func _ready() -> void:
 	_slide_in()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _back_hidden:
+		return   # no way out but CONTINUE while BACK is hidden
 	if event.is_action_pressed("ui_cancel"):
 		_on_back()
 		accept_event()

@@ -1,21 +1,38 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://beaov1t21dcqn"]
 
-[ext_resource type="Texture2D" path="res://assets/sprites/backgrounds/bg_dungeon.png" id="1"]
-[ext_resource type="Script" path="res://scenes/dungeon/dungeon.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://ujd4xrdfftou" path="res://assets/sprites/backgrounds/bg_dungeon.png" id="1"]
+[ext_resource type="Script" uid="uid://cex7d3suu3m2m" path="res://scenes/dungeon/dungeon.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/battle/hero.tscn" id="3"]
 
-[node name="Dungeon" type="Control"]
+[node name="Dungeon" type="Control" unique_id=1378550997]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("2")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=915846421]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("1")
 expand_mode = 1
 stretch_mode = 6
+
+[node name="Heroes" type="Node2D" parent="." unique_id=515343599]
+y_sort_enabled = true
+
+[node name="Hero1" parent="Heroes" unique_id=2016672496 instance=ExtResource("3")]
+position = Vector2(299, 515)
+
+[node name="Hero2" parent="Heroes" unique_id=1352701243 instance=ExtResource("3")]
+position = Vector2(474, 621)
+
+[node name="Hero3" parent="Heroes" unique_id=503202636 instance=ExtResource("3")]
+position = Vector2(683, 528)
