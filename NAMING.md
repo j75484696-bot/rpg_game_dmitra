@@ -246,6 +246,18 @@ One effect per element used in the demo (fire, water, wind, earth). 1–3 frames
 
 ---
 
+## 📍 Map markers
+
+Overworld signposts drawn over the map, not tiles in it. Filed under
+`assets/sprites/markers/`. One still PNG each — any motion (bob, pulse) is done
+in code, same as the hover rule below.
+
+| Type | Pattern | Example |
+|---|---|---|
+| Map marker | `marker_<place>.png` | `marker_dungeon.png` |
+
+---
+
 ## 🎴 Icons
 
 | Type | Pattern | Example |

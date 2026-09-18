@@ -12,6 +12,11 @@ const DUNGEON_SCENE := "res://scenes/dungeon/dungeon.tscn"
 # instant this fade finishes, so a snappier fade here is what makes the two
 # feel like one continuous entrance rather than two separate beats.
 const DUNGEON_FADE_TIME := 0.12
+# The marker over the arch bobs so the eye finds it from across the summit.
+# Done in code rather than as sprite frames, same as NAMING.md's hover rule:
+# one still PNG, and the motion costs no art time.
+const MARKER_BOB_PIXELS := 3.0
+const MARKER_BOB_TIME := 0.6          # one leg; a full up-and-down is twice this
 
 # --- Movement: free 8-directional -----------------------------------------
 const SPEED := 120.0
@@ -85,6 +90,7 @@ const REST_FRAME := 0      # the standing pose inside every sheet
 @onready var sprite: AnimatedSprite2D = %Sprite
 @onready var camera: Camera2D = %Camera
 @onready var dungeon_entrance: Area2D = %DungeonEntrance
+@onready var marker: Sprite2D = %Marker
 @onready var prompt: Node2D = %Prompt
 @onready var bgm: AudioStreamPlayer = $Bgm
 @onready var stair_links: Node2D = $StairLinks
@@ -114,6 +120,7 @@ func _ready() -> void:
 			mark.body_entered.connect(_on_landmark_entered.bind(mark))
 			mark.body_exited.connect(_on_landmark_exited.bind(mark))
 	dungeon_entrance.body_entered.connect(_on_dungeon_entrance_entered)
+	_start_marker_bob()
 
 	# An AnimatedSprite2D picks an animation BY NAME, so all eight directions have
 	# to land in one SpriteFrames. SpriteSheet.strip_auto() hands back a
@@ -198,6 +205,15 @@ func _on_dungeon_entrance_entered(body: Node2D) -> void:
 	# Deferred for the same reason set_entity_band is: body_entered arrives
 	# mid-flush, and this is about to touch the tree.
 	_enter_dungeon.call_deferred()
+
+# The tween is bound to this node, so it pauses with the map while a fight or
+# the prep menu is on top and resumes from the same spot when the map is back.
+func _start_marker_bob() -> void:
+	var rest := marker.position
+	var tween := create_tween().set_loops()
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(marker, "position:y", rest.y - MARKER_BOB_PIXELS, MARKER_BOB_TIME)
+	tween.tween_property(marker, "position:y", rest.y, MARKER_BOB_TIME)
 
 # The dungeon goes on the stack FIRST, so it is already sitting there the
 # moment prep opens: [ map, dungeon, prep_menu ]. START then only has to pop

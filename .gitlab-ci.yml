@@ -1,0 +1,20 @@
+# Verify tag: https://hub.docker.com/r/barichello/godot-ci/tags?name=4.7
+image: barichello/godot-ci:4.7
+
+stages:
+  - export
+
+pages:
+  stage: export
+  script:
+    # Regenerate .godot/imported/ — required in a fresh CI checkout
+    - godot --headless --import --quit
+    - mkdir -p public
+    - godot --headless --export-release "Web" public/index.html
+    - cp _headers public/_headers
+  artifacts:
+    paths:
+      - public
+    expire_in: never
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

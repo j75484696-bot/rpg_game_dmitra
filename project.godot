@@ -13,6 +13,7 @@ config_version=5
 config/name="rpg_game_dmitra"
 run/main_scene="res://ui/menus/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
+boot_splash/image="uid://bjeeuvkuylf3l"
 config/icon="res://icon.svg"
 
 [autoload]
