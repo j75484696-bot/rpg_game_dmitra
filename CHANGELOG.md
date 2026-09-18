@@ -7,6 +7,81 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-16 — hero/enemy slots follow the background's actual ground line
+
+### Fixed
+- **Heroes and enemies floated in dungeon fights.** `battle.tscn`'s three hero
+  Markers (and four enemy Markers) were hand-positioned against `bg_field.png`'s
+  grass line back on 2026-09-01 and never touched since. `bg_dungeon.png` puts
+  its floor about **95px lower** once both are scaled to the 1280×720 viewport
+  under `KEEP_ASPECT_COVERED` (grass line y≈320 vs. dungeon floor y≈415,
+  measured directly off the two images) — so a dungeon fight was drawing
+  combatants standing on where the grass *would* be, which on the dungeon art
+  is empty wall above the actual floor.
+- **`battle.gd` gains `BACKGROUND_SLOT_OFFSET`** — a background path keyed to a
+  flat Y shift, applied to every hero and enemy slot in `_apply_slot_offset()`
+  right after the background itself is set. `bg_field.png` (encounters, and
+  the standalone/demo case) is unlisted and gets `0.0`, so nothing changed
+  there. A fresh scene instance every fight is what makes the shift safe to
+  apply unconditionally — there's no authored position to accidentally drift
+  from fight to fight.
+
+---
+
+## 2026-09-16 — the dungeon is a real sequence of fights
+
+`dungeon.gd` goes from a bare backdrop to the actual M2 dungeon manager: four
+single-enemy fights in a fixed order, the prep menu reopening between them,
+and a real ending. "Combat inside it, and everything past START" — left open
+on 2026-09-11 — is closed.
+
+### Added
+- **`dungeon.gd` sequences `ENEMY_SEQUENCE`** — mudling, frostbite_imp,
+  emberhound, ashfang, in that fixed order. Not randomized: this is the
+  vertical slice's one dungeon, and a fixed ramp is the simplest thing that
+  reads as a difficulty curve. Each level pushes `battle.tscn` with exactly
+  **one** enemy (`rating.build()`), against `bg_dungeon.png` — the same fight
+  screen `map.gd` already uses for encounters, no dungeon-specific UI.
+- **The prep menu reopens after every level clear**, as an overlay over the
+  dungeon exactly like the very first one — but with `hide_back: true` in its
+  payload, so BACK is gone and there is no way out but forward. Once level 1
+  is cleared, the run is committed.
+- **`prep_menu.gd` gains the `hide_back` payload key.** `true` hides
+  `BackButton`, swaps `StartButton`'s text to **CONTINUE** (START only reads
+  right for a run that hasn't begun yet), and makes `ui_cancel` a no-op rather
+  than a back exit. `false`/absent — the very first prep screen — is
+  unchanged.
+- **`ui/menus/dungeon_victory.tscn` + `.gd`** — a new screen, shown once the
+  boss falls: "DUNGEON CLEARED", total XP earned across all four fights, and
+  a CONTINUE button. Pops itself with `{ "dungeon_cleared_ack": true }`;
+  `dungeon.gd` relays one more pop to actually reach the map, the same
+  two-pop shape BACK already used to leave from the first prep screen.
+- **A wipe ejects immediately.** `dungeon.gd` reads `battle.tscn`'s existing
+  `{ "party_won": false, "xp": ... }` pop result and pops itself straight back
+  to the map — no victory screen, no further prep, matching
+  `COMBAT_DATA.md`'s already-decided rule that a wipe costs every reward
+  except XP. XP earned before the wipe is still reported on the way out.
+
+### How the sequencing actually works
+`Transitions.scene_resumed` reaches every listener on every pop in the game,
+so `dungeon.gd`'s handler tells apart its three possible callers purely from
+the shape of `result` — there was no field free to spend on an explicit tag:
+
+| Caller | Result shape |
+|---|---|
+| `prep_menu` | `{ "prep_started": bool }` |
+| `battle` | `{ "party_won": bool, "xp": int }` |
+| `dungeon_victory` | `{ "dungeon_cleared_ack": true }` |
+
+### Not done, on purpose
+Revive-with-potion and the per-hero revive counter (`COMBAT_DATA.md`: three
+per hero per dungeon) are still open — a wipe here is an immediate loss, not
+a war of attrition against a shrinking party. `Inventory.md`'s note that
+revive counters belong to "the M2 dungeon manager" is only half addressed:
+the manager now exists, the counters don't yet.
+
+---
+
 ## 2026-09-11 — the dungeon entrance is wired, and the prep menu earns its slide
 
 Walking into the dungeon arch now opens the whole loop: the dungeon goes on

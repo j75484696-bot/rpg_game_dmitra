@@ -24,6 +24,18 @@ const DEMO_ENEMIES := [
 	"res://data/enemies/wisp.tres",
 ]
 
+# The hero/enemy slot Markers below are hand-positioned against bg_field.png's
+# grass line. A different background can put its own ground somewhere else on
+# screen entirely - bg_dungeon.png's floor sits about 95px lower once both are
+# scaled to the 1280x720 viewport under KEEP_ASPECT_COVERED (grass line y≈320
+# vs. dungeon floor y≈415), which is what made dungeon fights look like the
+# back-row hero was floating at the wall instead of standing on the floor.
+# Keyed by the exact path pushed as "background", applied to every slot as a
+# flat Y shift rather than re-authoring three Markers per background.
+const BACKGROUND_SLOT_OFFSET := {
+	"res://assets/sprites/backgrounds/bg_dungeon.png": 95.0,
+}
+
 # Three active heroes. Mirrors Targeting.ACTIVE - keep them in step.
 # The fourth hero sits at BACK2, the bench, and is swapped in from the prep
 # menu between fights. A benched hero is never built into a battle and
@@ -149,6 +161,7 @@ func _start_fight() -> void:
 	battle.battle_ended.connect(on_battle_ended)
 
 	_set_background()
+	_apply_slot_offset()
 	battle.setup(_active_heroes(), _enemy_dicts())
 	_build_hero_nodes()
 	_build_enemy_nodes()
@@ -165,6 +178,20 @@ func _set_background() -> void:
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return
 	background.texture = load(path)
+
+# Shifts every hero/enemy slot Marker down (or up) to match whatever ground
+# line the background actually has. A fresh scene instance every fight is
+# what makes this safe - there is no "undo" needed, the .tscn's authored
+# positions are what the next fight starts from regardless of background.
+func _apply_slot_offset() -> void:
+	var path: String = str(Transitions.payload().get("background", ""))
+	var offset_y: float = float(BACKGROUND_SLOT_OFFSET.get(path, 0.0))
+	if offset_y == 0.0:
+		return
+	for slot in hero_slots:
+		slot.position.y += offset_y
+	for slot in enemy_slots:
+		slot.position.y += offset_y
 
 # Only the three ACTIVE positions fight. The bench is skipped entirely.
 func _active_heroes() -> Array:
