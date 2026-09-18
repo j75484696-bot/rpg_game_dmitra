@@ -7,6 +7,31 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-18 — the repo gets a pipeline
+
+Every push now compiles every script and exports the Web build headless on
+GitLab; pushes to `prototype` publish that build to GitLab Pages. Until now the
+only way to know a script was broken was to open the editor, and the only build
+was whatever someone last exported by hand into `build/`.
+
+### Added
+- **`.gitlab-ci.yml`** — three jobs on `barichello/godot-ci:4.7.2`: `check`
+  (import + compile every `.gd`), `export-web` (headless Web export, kept as a
+  one-week artifact), `pages` (`prototype` only, publishes the export to
+  `https://nabiasjones1.gitlab.io/rpg_game_dmitra/`).
+- **`tools/ci_check_scripts.gd`** — SceneTree runner that `load()`s every `.gd`
+  under `res://` from `_initialize()`, after the autoloads are registered, and
+  exits 1 if any fails. Replaces `godot --check-only -s`, which never registers
+  autoloads and so fails every script that touches `Elements`/`Combat`/etc.
+
+### Changed
+- **`export_presets.cfg` is now committed** — the export job needs it. It's a
+  single unsigned Web preset, so nothing secret is in it; `.gitignore` says
+  where keys go if a signed preset is ever added. Dropped a stray `visionOS`
+  entry under `[runnable_presets]` that had no preset behind it.
+- `README.md`, `STRUCTURE.md`, `GITLAB_WORKPLAN.md` — describe the pipeline,
+  the two new root files, and add the CI row to M0.
+
 ## 2026-09-14 — the dungeon entrance gets its marker (#111)
 
 The arch on the summit now has an icon over it, so the way into the dungeon

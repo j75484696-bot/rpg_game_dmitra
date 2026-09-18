@@ -18,9 +18,10 @@ exports/
 *.apk
 *.x86_64
 
-# ========== SECRETS ==========
-# Export presets can hold signing keys / passwords — keep the local one out
-export_presets.cfg
+# ========== EXPORT PRESETS ==========
+# export_presets.cfg IS committed: CI needs it for the Web export, and the Web
+# preset holds no keys. If a signed preset (Android/iOS) is ever added, put its
+# keystore/passwords in GitLab CI variables, never in this file.
 
 # ========== C# / MONO (only if you add C#, harmless otherwise) ==========
 .mono/

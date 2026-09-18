@@ -40,6 +40,24 @@ Open a merge request from the branch. Add a `CHANGELOG.md` entry in the same
 commit — if you push without one, the next person has to read the diff to work
 out what changed.
 
+### What the pipeline does
+
+Every push runs [`.gitlab-ci.yml`](.gitlab-ci.yml):
+
+- **check** — imports the project headless and compiles every `.gd` with the
+  autoloads registered (`tools/ci_check_scripts.gd`). A parse error or a bad
+  autoload reference fails the job.
+- **export-web** — headless Web export, kept as a downloadable artifact for a
+  week. On a merge request, *Pipelines → export-web → Browse* gets you a
+  playable build without opening the editor.
+- **pages** — on `prototype` only, publishes that export to
+  <https://nabiasjones1.gitlab.io/rpg_game_dmitra/>. `main` stays the branch
+  merge requests target; `prototype` is what drives the live URL.
+
+The export reads `export_presets.cfg`, which is committed for that reason.
+It's a single unsigned Web preset — if you add a signed preset (Android/iOS),
+keep the keystore and passwords in GitLab CI variables, not in the file.
+
 ---
 
 ## Layout

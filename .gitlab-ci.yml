@@ -1,0 +1,49 @@
+# GitLab CI for the Godot 4.7 project.
+#
+#   check       every push   — import the project and compile every .gd script
+#   export-web  every push   — headless Web export, kept as a downloadable artifact
+#   pages       prototype    — publish that export to GitLab Pages
+#
+# The image ships the Godot binary and the export templates for its version;
+# keep the tag in step with config/features in project.godot.
+
+image: barichello/godot-ci:4.7.2
+
+variables:
+  GIT_DEPTH: 1
+
+stages: [check, export, deploy]
+
+check:
+  stage: check
+  script:
+    # Populate .godot/ so resource and uid references resolve; fails on missing deps.
+    - godot --headless --verbose --import
+    # Compile every .gd with the autoloads registered; exits 1 on any failure.
+    # (Not `--check-only -s`: that never registers autoloads, so every script
+    # that touches Elements/Party/Combat/... fails for the wrong reason.)
+    - godot --headless --path . -s tools/ci_check_scripts.gd
+
+export-web:
+  stage: export
+  needs: [check]
+  script:
+    - godot --headless --verbose --import
+    - mkdir -p build/web
+    # The path here overrides export_path in export_presets.cfg. Entry file is
+    # named index.html so Pages serves it without extra config.
+    - godot --headless --export-release Web build/web/index.html
+  artifacts:
+    name: "web-$CI_COMMIT_SHORT_SHA"
+    paths: [build/web]
+    expire_in: 1 week
+
+pages:
+  stage: deploy
+  needs: [export-web]
+  script:
+    - mv build/web public
+  artifacts:
+    paths: [public]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "prototype"
