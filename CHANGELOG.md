@@ -7,6 +7,34 @@ has to read the diff to find out what moved.
 
 ---
 
+## 2026-09-18 — hero placeholders in the dungeon scene, hidden during play
+
+`dungeon.tscn` gets a `Heroes` group with three `hero.tscn` instances so the
+party's dungeon positions can be laid out by dragging in the editor, the same
+way `battle.tscn`'s slot Markers are hand-placed — but with no explore state
+yet to show them in, they stay out of the way at runtime.
+
+### Added
+- **`Heroes` node2D + `Hero1`/`Hero2`/`Hero3`** — plain instances of
+  `scenes/battle/hero.tscn` (the same blue-box placeholder used everywhere
+  else pending real art), positioned roughly over the dungeon floor for
+  dragging into their final spots by hand.
+
+### Fixed
+- **Placeholders showed through the prep menu.** `Heroes` was first given
+  `z_index = 1`, copied straight from `battle.tscn` where nothing draws over
+  it — but the prep menu is pushed as an overlay that deliberately leaves
+  the dungeon visible underneath, so the elevated z_index drew the
+  placeholders on top of the menu instead of behind it. Removed; the node
+  now sits at the default z_index like the rest of the scene.
+- **Belt-and-suspenders: hidden outright at runtime.** `dungeon.gd` sets
+  `$Heroes.visible = false` in `_ready()` rather than relying on draw order
+  alone — there is no dungeon "explore" state yet where the party should be
+  seen standing here, so the group is an editor-only layout aid until one
+  exists.
+
+---
+
 ## 2026-09-16 — hero/enemy slots follow the background's actual ground line
 
 ### Fixed
